@@ -4,76 +4,6 @@
 char *__savefile_path = NULL;
 uint16_t __savefile_path_length;
 
-//Why is valid screens a part of Savefile details, but this function isn't?
-void crayon_vmu_display_icon(uint8_t vmu_bitmap, void *icon){
-	#ifdef _arch_dreamcast
-	maple_device_t *vmu;
-	vec2_s8_t port_and_slot;
-	uint8_t i;
-	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
-		if(crayon_savefile_get_device_bit(vmu_bitmap, i)){	//We want to display on this VMU
-			port_and_slot = crayon_savefile_dreamcast_get_port_and_slot(i);
-			if(!(vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y))){	//Device not present
-				continue;
-			}
-			vmu_draw_lcd(vmu, icon);
-		}
-	}
-	#endif
-
-	return;
-}
-
-#if defined(_arch_dreamcast)
-
-//Returns true if device has certain function/s
-uint8_t crayon_savefile_check_device_for_function(uint32_t function, int8_t save_device_id){
-	maple_device_t *vmu;
-
-	vec2_s8_t port_and_slot = crayon_savefile_dreamcast_get_port_and_slot(save_device_id);
-
-	//Invalid controller/port
-	if(port_and_slot.x < 0){
-		return 1;
-	}
-
-	//Make sure there's a device in the port/slot
-	if(!(vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y))){
-		return 1;
-	}
-
-	//Check the device is valid and it has a certain function
-	if(!vmu->valid || !(vmu->info.functions & function)){
-		return 1;
-	}
-
-	return 0;
-}
-
-#endif
-
-uint8_t crayon_savefile_dreamcast_get_screen_bitmap(){
-	#if defined(_arch_dreamcast)
-
-	uint8_t screens = 0;	//a1a2b1b2c1c2d1d2
-
-	int i;
-	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
-		//Check if device contains this function bitmap (Returns 0 on success)
-		if(!crayon_savefile_check_device_for_function(MAPLE_FUNC_LCD, i)){
-			crayon_savefile_set_device_bit(&screens, i);
-		}
-		
-	}
-	return valid_function;
-
-	#else
-
-	return 0;
-
-	#endif
-}
-
 //Dreamcast: Rounds the number down to nearest multiple of 512 , then adds 1 if there's a remainder
 //PC: Returns 0 (Function isn't needed on PC anyways)
 uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes){
@@ -380,7 +310,7 @@ uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t 
 uint32_t crayon_savefile_get_device_free_space(int8_t device_id){
 	#if defined(_arch_dreamcast)
 	
-	vec2_s8_t port_and_slot = crayon_savefile_dreamcast_get_port_and_slot(device_id);
+	vec2_s8_t port_and_slot = crayon_peripheral_dreamcast_get_port_and_slot(device_id);
 
 	maple_device_t *vmu;
 	vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y);
@@ -421,7 +351,7 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 
 	#if defined(_arch_dreamcast)
 
-	vec2_s8_t port_and_slot = crayon_savefile_dreamcast_get_port_and_slot(save_device_id);
+	vec2_s8_t port_and_slot = crayon_peripheral_dreamcast_get_port_and_slot(save_device_id);
 	if(port_and_slot.x == -1){	//Due to first return NULL, this should never trigger
 		free(path);
 		return NULL;
@@ -554,15 +484,6 @@ uint8_t crayon_savefile_set_string(crayon_savefile_details_t *details, const cha
 	return 0;
 }
 
-uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id){
-	return (device_bitmap >> save_device_id) & 1;
-}
-
-void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id){
-	*device_bitmap |= (1 << save_device_id);
-	return;
-}
-
 //THIS CAN BE OPTIMISED
 uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t save_device_id){
 	char *savename = crayon_savefile_get_full_path(details, save_device_id);
@@ -587,7 +508,8 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 	int pkg_size = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-	//Surely instead of doing the below I can just read the header and hence the app id/version?
+	//Surely instead of doing the below, I can just read the header + version
+	//But then again, I wouldn't be able to do the CRC check
 	;
 
 	uint8_t *pkg_out = malloc(pkg_size);
@@ -623,8 +545,9 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 	fread(&sf_version, 4, 1, fp);
 	fclose(fp);
 
-	//Pass that sf_version (And maybe "hdr.app_id") through our endian-ness function
-	;
+	//Pass that sf_version and maybe "hdr.app_id" through our endian-ness function
+	crayon_misc_endian_correction((uint8_t*)&hdr, sizeof(hdr));
+	crayon_misc_endian_correction((uint8_t*)&sf_version, sizeof(crayon_savefile_version_t));
 
 	//Either it has the wrong size or the app ids somehow don't match
 	//(The later should never trigger if you use this library right)
@@ -647,6 +570,91 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 
 
 	return 0;
+}
+
+
+void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
+	uint8_t present_devices = 0;
+	uint8_t present_savefiles = 0;
+	uint8_t current_savefiles = 0;
+
+	FILE *fp;
+
+	uint8_t i;
+	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
+		#if defined(_arch_dreamcast)
+
+		//Check if device is a memory card
+		if(crayon_peripheral_has_function(MAPLE_FUNC_MEMCARD, i)){
+			continue;
+		}
+
+		#endif
+
+		//Check everything went fine, it returns 0
+		uint8_t check_result = crayon_savefile_check_savedata(details, i);
+		if(check_result){
+			//If a savefile is newer than our system, then we leave the whole device alone
+			if(check_result != 2 ||
+				details->savefile_versions[i] > details->latest_version){
+				continue;
+			}
+
+			char *savename = crayon_savefile_get_full_path(details, i);
+			if(!savename){
+				continue;
+			}
+
+			//Calculate the size of the savefile to make sure if we have enough space
+			uint32_t size_bytes;
+			fp = fopen(savename, "rb");
+			free(savename);
+			if(!fp){	//This usually means check_result was equal to 2
+				continue;
+			}
+
+			fseek(fp, 0, SEEK_END);
+			size_bytes = ftell(fp);
+			fclose(fp);
+
+			#if defined(_arch_pc)
+			
+			//Add a check here to see if the path is valid and if it can be writen to
+			;
+
+			#endif
+
+			crayon_savefile_set_device_bit(&present_devices, i);
+			if(crayon_savefile_get_device_free_space(i) >= size_bytes){
+				crayon_savefile_set_device_bit(&present_devices, i);
+			}
+		}
+		else{
+			if(details->savefile_versions[i] <= details->latest_version){
+				crayon_savefile_set_device_bit(&present_devices, i);
+				crayon_savefile_set_device_bit(&present_savefiles, i);
+				if(details->savefile_versions[i] == details->latest_version){
+					crayon_savefile_set_device_bit(&current_savefiles, i);
+				}
+			}
+			//If its greater than, then we just leave it alone and say the device isn't present
+		}
+	}
+
+	details->present_devices = present_devices;
+	details->present_savefiles = present_savefiles;
+	details->current_savefiles = current_savefiles;
+
+	return;
+}
+
+uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id){
+	return (device_bitmap >> save_device_id) & 1;
+}
+
+void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id){
+	*device_bitmap |= (1 << save_device_id);
+	return;
 }
 
 uint8_t crayon_savefile_set_path(char *path){
@@ -751,9 +759,6 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 
 	//Copy the savename here
 	strncpy(details->strings[CRAY_SF_STRING_FILENAME], save_name, str_lengths[CRAY_SF_STRING_FILENAME]);
-
-	//Update the VMU screen bitmap (Dreamcast only)
-	details->valid_vmu_screens = crayon_savefile_dreamcast_get_screen_bitmap();
 
 	details->save_device_id = -1;
 
@@ -1081,81 +1086,6 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	return 0;
 }
 
-void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
-	uint8_t present_devices = 0;
-	uint8_t present_savefiles = 0;
-	uint8_t current_savefiles = 0;
-
-	FILE *fp;
-
-	uint8_t i;
-	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
-		#if defined(_arch_dreamcast)
-
-		//Check if device is a memory card
-		if(crayon_savefile_check_device_for_function(MAPLE_FUNC_MEMCARD, i)){
-			continue;
-		}
-
-		#endif
-
-		//Check everything went fine, it returns 0
-		uint8_t check_result = crayon_savefile_check_savedata(details, i);
-		if(check_result){
-			//If a savefile is newer than our system, then we leave the whole device alone
-			if(check_result != 2 ||
-				details->savefile_versions[i] > details->latest_version){
-				continue;
-			}
-
-			char *savename = crayon_savefile_get_full_path(details, i);
-			if(!savename){
-				continue;
-			}
-
-			//Calculate the size of the savefile to make sure if we have enough space
-			uint32_t size_bytes;
-			fp = fopen(savename, "rb");
-			free(savename);
-			if(!fp){	//This usually means check_result was equal to 2
-				continue;
-			}
-
-			fseek(fp, 0, SEEK_END);
-			size_bytes = ftell(fp);
-			fclose(fp);
-
-			#if defined(_arch_pc)
-			
-			//Add a check here to see if the path is valid and if it can be writen to
-			;
-
-			#endif
-
-			crayon_savefile_set_device_bit(&present_devices, i);
-			if(crayon_savefile_get_device_free_space(i) >= size_bytes){
-				crayon_savefile_set_device_bit(&present_devices, i);
-			}
-		}
-		else{
-			if(details->savefile_versions[i] <= details->latest_version){
-				crayon_savefile_set_device_bit(&present_devices, i);
-				crayon_savefile_set_device_bit(&present_savefiles, i);
-				if(details->savefile_versions[i] == details->latest_version){
-					crayon_savefile_set_device_bit(&current_savefiles, i);
-				}
-			}
-			//If its greater than, then we just leave it alone and say the device isn't present
-		}
-	}
-
-	details->present_devices = present_devices;
-	details->present_savefiles = present_savefiles;
-	details->current_savefiles = current_savefiles;
-
-	return;
-}
-
 uint8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	//Device isn't present, can't do anything with it
 	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
@@ -1217,11 +1147,6 @@ uint8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	crayon_misc_encode_to_buffer((uint8_t*)&hdr.name, data, sizeof(hdr.name));
 	crayon_misc_encode_to_buffer((uint8_t*)&hdr.app_id, data + sizeof(hdr.name), sizeof(hdr.app_id));
 
-	// crayon_misc_encode_to_buffer((uint8_t*)&hdr.app_id, data, 16);
-	// crayon_misc_encode_to_buffer((uint8_t*)&hdr.short_desc, data + 16, 16);
-	// crayon_misc_encode_to_buffer((uint8_t*)&hdr.long_desc, data + 32, 32);
-	// crayon_misc_encode_to_buffer((uint8_t*)&hdr.data_size, data + 64, 4);
-
 	//Either it has the wrong size or the app ids somehow don't match
 	//(The later should never trigger if you use this library right)
 	if(strcmp(hdr.app_id, details->strings[CRAY_SF_STRING_APP_ID])){
@@ -1231,7 +1156,7 @@ uint8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	}
 
 	//Read the pkg data into my struct
-	//We add CRAY_SF_HDR_SIZE to skip the header
+	//We use CRAY_SF_HDR_SIZE to skip the header
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, data + CRAY_SF_HDR_SIZE,
 		pkg_size - CRAY_SF_HDR_SIZE);
 
@@ -1286,13 +1211,13 @@ uint8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	free(data);	//No longer needed
 
 	//Check if a file exists with that name, since we'll overwrite it.
-	uint32_t bytes_freed = 0;
-	if((fp = fopen(savename, "rb"))){
-		fseek(fp, 0, SEEK_END);
-		bytes_freed = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		fclose(fp);
-	}
+	// uint32_t bytes_freed = 0;
+	// if((fp = fopen(savename, "rb"))){
+	// 	fseek(fp, 0, SEEK_END);
+	// 	bytes_freed = ftell(fp);
+	// 	fseek(fp, 0, SEEK_SET);
+	// 	fclose(fp);
+	// }
 
 	//Make sure there's enough free space on the VMU.
 	// if(crayon_savefile_get_device_free_space(details->save_device_id) + bytes_freed <
@@ -1359,7 +1284,7 @@ uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details){
 
 	#if defined(_arch_dreamcast)
 
-	if(crayon_savefile_check_device_for_function(MAPLE_FUNC_MEMCARD, details->save_device_id)){
+	if(crayon_peripheral_has_function(MAPLE_FUNC_MEMCARD, details->save_device_id)){
 		free(savename);
 		return 1;
 	}
@@ -1375,11 +1300,6 @@ uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details){
 	free(savename);
 
 	return 1;
-}
-
-void crayon_savefile_free_base_path(){
-	if(__savefile_path){free(__savefile_path);}
-	return;
 }
 
 void crayon_savefile_free(crayon_savefile_details_t *details){
@@ -1418,6 +1338,9 @@ void crayon_savefile_free_icon(crayon_savefile_details_t *details){
 	details->icon_anim_count = 0;
 	details->icon_anim_speed = 0;
 
+	details->icon_data = NULL;
+	details->icon_palette = NULL;
+
 	#endif
 
 	return;
@@ -1427,6 +1350,7 @@ void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details){
 	#ifdef _arch_dreamcast
 
 	if(details->eyecatcher_data){free(details->eyecatcher_data);}
+	details->eyecatcher_data = NULL;
 	details->eyecatcher_type = 0;
 
 	#endif
@@ -1460,5 +1384,14 @@ void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata){
 		savedata->lengths[i] = 0;
 	}
 
+	return;
+}
+
+void crayon_savefile_free_base_path(){
+	if(__savefile_path){
+		free(__savefile_path);
+		__savefile_path = NULL;
+	}
+	
 	return;
 }

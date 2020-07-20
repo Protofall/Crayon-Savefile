@@ -3,7 +3,6 @@
 //NOTE: This function contains the default values only for the current version
 //Thats why we can reference the variables directly like this
 void savefile_defaults(){
-	// if(!sf_var1){printf("Is NULL\n"); exit(1);}	//Triggers
 	sf_var1[0] = 300;
 	sf_var2[0] = 5.5;
 	sf_var3[0] = 27;
@@ -52,8 +51,6 @@ uint8_t update_savefile(crayon_savefile_old_variable_t *loaded_savedata,
 uint8_t setup_savefile(crayon_savefile_details_t * details){
 	uint8_t i, error;
 
-	// sf_var1 = NULL;
-
 	#ifdef _arch_pc
 
 	crayon_savefile_set_path("saves/");
@@ -84,11 +81,12 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 
 	uint8_t * vmu_lcd_icon = NULL;
 
-	setup_vmu_icon_load(&vmu_lcd_icon, "/Save/LCD.bin");
+	uint8_t vmu_screens_bitmap;
+	setup_vmu_icon_load(&vmu_lcd_icon, "/Save/LCD.bin", &vmu_screens_bitmap);
 
 	//Apply the VMU LCD icon (Apparently this is automatic if your savefile is an ICONDATA.VMS)
-	setup_vmu_icon_apply(vmu_lcd_icon, details->valid_vmu_screens);
-	// free(vmu_lcd_icon);	//Already free-d within the above function
+	crayon_peripheral_vmu_display_icon(vmu_screens_bitmap, vmu_lcd_icon);
+	free(vmu_lcd_icon);	//Already free-d within the above function
 	
 	crayon_savefile_add_icon(details, "/Save/image.bin", "/Save/palette.bin", 3, 15);
 	crayon_savefile_add_eyecatcher(details, "Save/eyecatch3.bin");	//Must be called AFTER init
@@ -132,8 +130,11 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 }
 
 //We use a double pointer because we want to modify the pointer itself with malloc
-int16_t setup_vmu_icon_load(uint8_t ** vmu_lcd_icon, char * icon_path){
+int16_t setup_vmu_icon_load(uint8_t **vmu_lcd_icon, char *icon_path, uint8_t *vmu_bitmap){
 	#ifdef _arch_dreamcast
+
+	*vmu_bitmap = crayon_peripheral_dreamcast_get_screens();
+
 	*vmu_lcd_icon = (uint8_t *) malloc(6 * 32);	//6 * 32 because we have 48/32 1bpp so we need that / 8 bytes
 	FILE * file_lcd_icon = fopen(icon_path, "rb");
 	if(!file_lcd_icon){return -1;}
@@ -141,17 +142,10 @@ int16_t setup_vmu_icon_load(uint8_t ** vmu_lcd_icon, char * icon_path){
 	fclose(file_lcd_icon);
 
 	return res;
+
 	#else
 
 	return 0;
+	
 	#endif
-}
-
-void setup_vmu_icon_apply(uint8_t * vmu_lcd_icon, uint8_t valid_vmu_screens){
-	#ifdef _arch_dreamcast
-	crayon_vmu_display_icon(valid_vmu_screens, vmu_lcd_icon);
-	free(vmu_lcd_icon);
-	#endif
-
-	return;
 }

@@ -51,11 +51,11 @@ int main(){
 	#endif
 
 	#ifdef _arch_dreamcast
-	
+
 	char buffer[70];
 	if(!setup_res){
 		sprintf(buffer, "Save created\nUses %d blocks and has %d frames of\nanimation",
-		crayon_savefile_get_save_block_count(&savefile_details),
+		crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details)),
 		savefile_details.icon_anim_count);
 	}
 	else{

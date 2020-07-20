@@ -16,12 +16,23 @@
 #include <string.h>
 #include <stdint.h> //For the uintX_t types
 
+#ifdef _arch_dreamcast
+
+#include <dc/maple/vmu.h>
+#include <dc/vmu_pkg.h>
+#include <dc/vmufs.h>
+#include <kos/fs.h>
+
+#endif
+
 //Checks if the computer running this code is big endian or not
 extern uint8_t crayon_misc_is_big_endian();
 
-extern void crayon_misc_correct_endian(uint8_t *buffer, size_t bytes);	//WIP
+extern void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//WIP
 
 extern void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
+
+
 
 #define CRAYON_BOOT_MODE 0	//Load assets from cd dir instead of sd
 
@@ -42,15 +53,25 @@ int mount_ext2_sd();
 
 #endif
 
+uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint);
+
+#endif
+
+
 //Only used for port/slot in dreamcast. x is port, y is slot
 typedef struct vec2_s8{
 	int8_t x, y;
 } vec2_s8_t;
 
-vec2_s8_t crayon_savefile_dreamcast_get_port_and_slot(int8_t savefile_device_id);
+vec2_s8_t crayon_peripheral_dreamcast_get_port_and_slot(int8_t savefile_device_id);
 
-uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint);
+//Returns a bitmap of all vmus with a screen (a1a2b1b2c1c2d1d2)
+uint8_t crayon_peripheral_dreamcast_get_screens();
 
-#endif
+void crayon_peripheral_vmu_display_icon(uint8_t vmu_bitmap, void *icon);
+
+//0 if the peripheral doesn't have the function
+//Kind of a Dreamcast-specific function, but for later console ports this might be reusable
+uint8_t crayon_peripheral_has_function(uint32_t function, int8_t save_device_id);
 
 #endif
