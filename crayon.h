@@ -26,13 +26,15 @@
 #endif
 
 //Checks if the computer running this code is big endian or not
-extern uint8_t crayon_misc_is_big_endian();
+uint8_t crayon_misc_is_big_endian();
 
-extern void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//WIP
+void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//WIP
 
-extern void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
+void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 
-
+//Gets or sets a single bit in an integer
+uint32_t crayon_misc_get_bit(uint32_t number, uint8_t index);
+void crayon_misc_set_bit(uint32_t *number, uint8_t index);
 
 #define CRAYON_BOOT_MODE 0	//Load assets from cd dir instead of sd
 
@@ -56,7 +58,6 @@ int mount_ext2_sd();
 uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint);
 
 #endif
-
 
 //Only used for port/slot in dreamcast. x is port, y is slot
 typedef struct vec2_s8{

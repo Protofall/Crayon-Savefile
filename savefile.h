@@ -212,8 +212,9 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details);
 //---------------Stuff the user should be calling----------------
 
 
-uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);	//Returns boolean
-void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);	//Updates device_bitmap
+//These two are more so wrapper functions for the crayon_misc bit setter/getters
+uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
+void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
 
 uint8_t crayon_savefile_set_path(char *path);	//On Dreamcast this is always "/vmu/" and it will ignore the param
 

@@ -649,11 +649,13 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 }
 
 uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id){
-	return (device_bitmap >> save_device_id) & 1;
+	return crayon_misc_get_bit(device_bitmap, save_device_id);
 }
 
 void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id){
-	*device_bitmap |= (1 << save_device_id);
+	uint32_t bigger_num = *device_bitmap;
+	crayon_misc_set_bit(&bigger_num, save_device_id);
+	*device_bitmap = bigger_num;
 	return;
 }
 
@@ -1392,6 +1394,6 @@ void crayon_savefile_free_base_path(){
 		free(__savefile_path);
 		__savefile_path = NULL;
 	}
-	
+
 	return;
 }

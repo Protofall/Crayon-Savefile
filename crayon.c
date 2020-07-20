@@ -1,18 +1,27 @@
 #include "crayon.h"
 
-extern uint8_t crayon_misc_is_big_endian(){
+uint8_t crayon_misc_is_big_endian(){
 	int a = 1;
 	return !((char*)&a)[0];
 }
 
-extern void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes){
+void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes){
 	printf("ENDIANESS CORRECTOR INCOMPLETE\n");
 	return;
 }
 
-extern void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes){
+void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes){
 	while(bytes--){*buffer++ = *data++;}
 
+	return;
+}
+
+uint32_t crayon_misc_get_bit(uint32_t number, uint8_t index){
+	return (number >> index) & 1;
+}
+
+void crayon_misc_set_bit(uint32_t *number, uint8_t index){
+	*number |= (1 << index);
 	return;
 }
 
