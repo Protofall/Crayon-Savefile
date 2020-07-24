@@ -2,11 +2,7 @@
 
 #ifdef _arch_dreamcast
 void font_init(){
-	#if CRAYON_BOOT_MODE == 1
-		crayon_memory_mount_romdisk("/sd/sf_icon.img", "/Save");
-	#else
-		crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save");
-	#endif
+	crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save");
 
 	int i, x, y, c;
 	unsigned short * temp_tex;

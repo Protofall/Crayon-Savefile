@@ -1,4 +1,4 @@
-TARGET = VmuExample-DeCrayonised
+TARGET = Crayon-Savefile-Demo
 IPBIN = ./IP.BIN
 
 # directories

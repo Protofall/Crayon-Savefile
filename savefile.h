@@ -12,7 +12,6 @@
 #include <dc/maple/vmu.h>
 #include <dc/vmu_pkg.h>
 #include <dc/vmufs.h>
-#include <kos/fs.h>
 
 #endif
 
@@ -36,6 +35,8 @@ typedef union crayon_savefile_old_variables{
 	uint8_t data_type;
 	// void *ptr; //(since the user will probably use the built-in function instead)
 	//WHY AM I USING A UNION-OF-POINTERS INSTEAD OF A VOID POINTER. Both are 8 bytes in size, right?
+	//Well, on Dreamcast the union is only 4 bytes since a double is just a float over there
+	//due to a compiler flag being forced due to the GCC patches
 	union{
 		double *t_double;
 		float *t_float;
@@ -49,7 +50,7 @@ typedef union crayon_savefile_old_variables{
 	};
 } crayon_savefile_old_variable_t;
 
-//This is never accessed directly, but it will contain all of you variables that will get saved
+//This is never accessed directly by the user, but it will contain all of you variables that will get saved
 typedef struct crayon_savefile_data{
 	double *doubles;
 	float *floats;
@@ -62,10 +63,12 @@ typedef struct crayon_savefile_data{
 	char *chars;
 
 	uint32_t lengths[CRAY_NUM_TYPES];	//The lengths are in the order they appear above
+	uint32_t size;
 } crayon_savefile_data_t;
 
-#define crayon_savefile_version_t uint32_t	//If you know you won't have many versions, change this to a uint8_t
-											//But don't change it mid way through a project
+//If you know you won't have many versions, change this to a uint8_t or uint16_t
+//But don't change it mid way through a project
+#define crayon_savefile_version_t uint32_t
 
 typedef struct crayon_savefile_history{
 	uint32_t id;
@@ -73,9 +76,9 @@ typedef struct crayon_savefile_history{
 	uint8_t data_type;
 	uint32_t data_length;
 	crayon_savefile_version_t version_added;
-	crayon_savefile_version_t version_removed;	//0 is still present in the current version
+	crayon_savefile_version_t version_removed;	//if equal to latest version + 1, it hasn't been removed
 
-	//Add some unions here for the pointer to the data and the default value
+	//Contains the address of the user's pointer so we can re-assign it in solidify()
 	union{
 		double **t_double;
 		float **t_float;
@@ -112,65 +115,61 @@ enum {
 	#define CRAY_SF_NUM_SAVE_DEVICES 1
 
 	#define CRAY_SF_HDR_SIZE (16 + 16)	//Must be a multiple of 4 bytes long
-	// #define CRAY_SF_HDR_SIZE (16 + 16 + 32 + sizeof(uint32_t))	//Must be a multiple of 4 bytes long
 	typedef struct crayon_savefile_hdr{
 		char name[16];	//Not actually used, but useful if you read a savefile with a hex editor
-						// SHOULD BE "CRAYON SAVEFILE" with a null terminator at the end
+						//It should always be set to "CRAYON SAVEFILE" with a null terminator at the end
 		char app_id[16];
-		// char short_desc[16];
-		// char long_desc[32];
-		// uint32_t data_size;
 	} crayon_savefile_hdr_t;
 
 #endif
-
-//For DREAMCAST
-	// Divide the device id by 2 (round down) to get the port number
-	// Even device ids are slot 1 and odd is slot 2
 
 //The struct that contains all of a save file info. This is useful for passing
 //by reference into a function and if you want to modify the save file data easily
 //or even use different save files for one game
 typedef struct crayon_savefile_details{
+	//The version of the most recent savefile version known to the program
 	crayon_savefile_version_t latest_version;
 
+	//The struct that contains the true data the user will indirectly manipulate
 	crayon_savefile_data_t savedata;
-	uint32_t savedata_size;	//Might move this inside the data var
 
 	//All the strings we have. Different systems might have a different number of strings
 	char *strings[CRAY_SF_NUM_DETAIL_STRINGS];
 
+	//The following 3 variables are bitmaps
 	uint8_t present_devices;	//Shows any device thats present that has enough space to save too
 	uint8_t present_savefiles;	//Shows any device with any savefile from any version
 	uint8_t current_savefiles;	//Only shows savefiles in the current format
-	crayon_savefile_version_t savefile_versions[CRAY_SF_NUM_SAVE_DEVICES];	//Stores the versions of savefiles.
+	crayon_savefile_version_t savefile_versions[CRAY_SF_NUM_SAVE_DEVICES];	//Stores the versions of savefiles detected
 
-	//This tells us what storage system we save to
-	//On Dreamcast this corresponds to one of the 8 memory cards
+	//This tells us what storage device we save to
+	//On Dreamcast this corresponds to one of the 8 memory cards (slots 1 or 2, ports 0 to 3)
 	//On PC there is only one, the savefile folder
-	//And technically if the saturn was supported, it would have internal storage + save cartridge (2)
 	int8_t save_device_id;
 
 	crayon_savefile_history_t *history;
 	crayon_savefile_history_t *history_tail;	//Just used to speed stuff the history building process
-	uint32_t num_vars;
+	uint32_t num_vars;	//The length of the linked list
 
+	//The functions the user provides for setting the default values of a new savefile and
+	//how to handle older savefiles in the new system
 	void (*default_values_func)();
 	uint8_t (*update_savefile_func)(crayon_savefile_old_variable_t*,
 	crayon_savefile_version_t, crayon_savefile_version_t);
 
+	//Dreamcast exclusive variables
 	#if defined(_arch_dreamcast)
 
+	//Savefile icon
 	uint8_t *icon_data;
 	uint16_t *icon_palette;
-	uint8_t icon_anim_count;	//Decided to not go with a uint16_t (Largest VMU supports) because
-								//when would you ever want more than 255 frames of animation here?
-								//Also BIOS will only work with up to 3 icons
+	uint8_t icon_anim_count;	//Decided to not go with a uint16_t since the Dreamcast BIOS
+								//will only work with up to 3 icons
 	uint16_t icon_anim_speed;	//Set to "0" for no animation (1st frame only)
 
-	//Appears on the VMU screen on the left in the DC BIOS
+	//Appears when selecting a save in the BIOS
 	uint8_t *eyecatcher_data;
-	uint8_t eyecatcher_type;		//PAL4BPP (4 Blocks), PAL8BPP (8.875 Blocks), plain ARGB4444 (15.75 Blocks)
+	uint8_t eyecatcher_type;		//PAL4BPP (4 Blocks), PAL8BPP (8.875 Blocks), bitmap ARGB4444 (15.75 Blocks)
 
 	#endif
 } crayon_savefile_details_t;
@@ -208,6 +207,10 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 //This function will update the valid devices and/or the current savefile bitmaps
 void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details);
 
+void crayon_savefile_free_icon(crayon_savefile_details_t *details);
+void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details);
+void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata);
+
 
 //---------------Stuff the user should be calling----------------
 
@@ -216,7 +219,7 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details);
 uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
 void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
 
-uint8_t crayon_savefile_set_path(char *path);	//On Dreamcast this is always "/vmu/" and it will ignore the param
+uint8_t crayon_savefile_set_base_path(char *path);	//On Dreamcast this is always "/vmu/" and it will ignore the param
 
 //Make sure to call this on a new savefile details struct otherwise you can get strange results if
 	//you use it without this. The last two parameters are function pointers to user defined default
@@ -247,10 +250,10 @@ crayon_savefile_set_string(details, string, CRAY_SF_STRING_LONG_DESC);
 
 //The return value is 1 when the number of icons is greater than 3. The DC BIOS can't render icons
 	//with 4 or more frames.
-uint8_t crayon_savefile_add_icon(crayon_savefile_details_t *details, const char *image, const char *palette,
+uint8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *image, const char *palette,
 	uint8_t icon_anim_count, uint16_t icon_anim_speed);
 
-uint8_t crayon_savefile_add_eyecatcher(crayon_savefile_details_t *details, const char *eyecatch_path);
+uint8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const char *eyecatch_path);
 
 //Return type is the id of the variable. Starts at 1, if the function returns 0 then an error occured
 //Note that if a variable still exists, for version_removed we set it to zero
@@ -271,9 +274,6 @@ uint8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
 uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details);	//UNFINISHED. INCOMPLETE
 
 void crayon_savefile_free(crayon_savefile_details_t *details);	//Calling this calls the other frees
-void crayon_savefile_free_icon(crayon_savefile_details_t *details);
-void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details);
-void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata);
 void crayon_savefile_free_base_path();
 
 #endif

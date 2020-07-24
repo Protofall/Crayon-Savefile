@@ -7,18 +7,7 @@
 #include "setup.h"
 #include "graphics.h"
 
-#define CRAYON_DEBUG 0
-
 int main(){
-	#if defined(_arch_dreamcast) && CRAYON_BOOT_MODE == 1
-
-	int sdRes = mount_ext2_sd();	//This function should be able to mount an ext2 formatted sd card to the /sd dir
-	if(sdRes != 0){
-		return 0;
-	}
-
-	#endif
-
 	crayon_savefile_details_t savefile_details;
 
 	uint8_t setup_res = setup_savefile(&savefile_details);
@@ -44,23 +33,25 @@ int main(){
 		// crayon_savefile_update_valid_saves(&savefile_details, CRAY_SAVEFILE_UPDATE_MODE_SAVE_PRESENT);	//Updating the save
 	}
 
-	#if defined(_arch_dreamcast) && CRAYON_BOOT_MODE == 1
-	
-	unmount_ext2_sd();	//Unmounts the SD dir to prevent corruption since we won't need it anymore
-	
-	#endif
+	#if defined(_arch_dreamcast)
 
-	#ifdef _arch_dreamcast
+	// char buffer[70];
+	// if(!setup_res){
+	// 	sprintf(buffer, "Save created\nUses %d blocks and has %d frames of\nanimation",
+	// 	crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details)),
+	// 	savefile_details.icon_anim_count);
+	// }
+	// else{
+	// 	sprintf(buffer, "It failed with code %d", setup_res);
+	// }
 
-	char buffer[70];
-	if(!setup_res){
-		sprintf(buffer, "Save created\nUses %d blocks and has %d frames of\nanimation",
-		crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details)),
-		savefile_details.icon_anim_count);
-	}
-	else{
-		sprintf(buffer, "It failed with code %d", setup_res);
-	}
+	// sprintf(buffer, "It failed with code %d", setup_res);
+
+	char buffer[400];
+	sprintf(buffer, "Res %d %d %d. Uses %d blocks and has\n%d frames of animation.\n%d %d %d", setup_res, save_error,
+		load_error, crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details)),
+		savefile_details.icon_anim_count, savefile_details.present_devices, savefile_details.present_savefiles,
+		savefile_details.current_savefiles);
 
 	uint8_t end = 0;
 	while(!end){
@@ -74,22 +65,23 @@ int main(){
 		pvr_scene_begin();
 
 		pvr_list_begin(PVR_LIST_TR_POLY);
-			switch(save_error){
-				case 0:
-					draw_string(30, 30, 1, 255, 255, 216, 0, buffer, 2, 2); break;
-				case 1:
-					draw_string(30, 30, 1, 255, 255, 216, 0, "Selected device isn't a VMU", 2, 2); break;
-				case 2:
-					draw_string(30, 30, 1, 255, 255, 216, 0, "Selected VMU doesn't have enough space", 2, 2); break;
-				case 3:
-					draw_string(30, 30, 1, 255, 255, 216, 0, "Ran out of memory when making savefile", 2, 2); break;
-				case 4:
-					draw_string(30, 30, 1, 255, 255, 216, 0, "Not enough space on VMU for savefile", 2, 2); break;
-				case 5:
-					draw_string(30, 30, 1, 255, 255, 216, 0, "Couldn't access savefile on VMU", 2, 2); break;
-				case 6:
-					draw_string(30, 30, 1, 255, 255, 216, 0, "Couldn't write to VMU", 2, 2); break;
-			}
+			draw_string(30, 30, 1, 255, 255, 216, 0, buffer, 2, 2);
+			// switch(save_error){
+			// 	case 1:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, buffer, 2, 2); break;
+			// 	case 0:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Selected device isn't a VMU", 2, 2); break;
+			// 	case 2:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Selected VMU doesn't have enough space", 2, 2); break;
+			// 	case 3:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Ran out of memory when making savefile", 2, 2); break;
+			// 	case 4:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Not enough space on VMU for savefile", 2, 2); break;
+			// 	case 5:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Couldn't access savefile on VMU", 2, 2); break;
+			// 	case 6:
+			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Couldn't write to VMU", 2, 2); break;
+			// }
 		pvr_list_finish();
 
 
@@ -100,7 +92,7 @@ int main(){
 
 	char buffer[70];
 	if(!setup_res){
-		sprintf(buffer, "Save initialised\nUses %d bytes", CRAY_SF_HDR_SIZE + savefile_details.savedata_size);
+		sprintf(buffer, "Save initialised\nUses %d bytes", CRAY_SF_HDR_SIZE + savefile_details.savedata.size);
 	}
 	else{
 		sprintf(buffer, "It failed with code %d", setup_res);

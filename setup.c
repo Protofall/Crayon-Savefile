@@ -53,31 +53,27 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 
 	#ifdef _arch_pc
 
-	crayon_savefile_set_path("saves/");
+	crayon_savefile_set_base_path("saves/");
 
 	#else
 	
-	crayon_savefile_set_path(NULL);	//Dreamcast ignores the parameter anyways
-									//(Assumes "/vmu/") so its still fine to
-									//do the method above for all platforms
+	crayon_savefile_set_base_path(NULL);	//Dreamcast ignores the parameter anyways
+											//(Assumes "/vmu/") so its still fine to
+											//do the method above for all platforms
 	#endif
 
 	error = crayon_savefile_init_savefile_details(details, "SAVE_DEMO3.s", SFV_CURRENT,
 		savefile_defaults, update_savefile);
-	if(error){printf("ERROR, savefile couldn't be created\n");}
+	if(error){return 1;}
 	error += crayon_savefile_set_app_id(details, "ProtoSaveDemo3");
 	error += crayon_savefile_set_short_desc(details, "Save Demo");
 	error += crayon_savefile_set_long_desc(details, "Crayon's VMU demo");
-	if(error){printf("ERROR, Savefile string too long\n");}
+	if(error){return 1;}
 
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 
 	//Load the VMU icon data
-	#if CRAYON_BOOT_MODE == 1
-		crayon_memory_mount_romdisk("/sd/sf_icon.img", "/Save");
-	#else
-		crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save");
-	#endif
+	crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save");
 
 	uint8_t * vmu_lcd_icon = NULL;
 
@@ -88,8 +84,8 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	crayon_peripheral_vmu_display_icon(vmu_screens_bitmap, vmu_lcd_icon);
 	free(vmu_lcd_icon);	//Already free-d within the above function
 	
-	crayon_savefile_add_icon(details, "/Save/image.bin", "/Save/palette.bin", 3, 15);
-	crayon_savefile_add_eyecatcher(details, "Save/eyecatch3.bin");	//Must be called AFTER init
+	if(crayon_savefile_set_icon(details, "/Save/image.bin", "/Save/palette.bin", 3, 15)){return 1;}
+	if(crayon_savefile_set_eyecatcher(details, "Save/eyecatch3.bin")){return 1;}
 
 	fs_romdisk_unmount("/Save");
 
@@ -111,7 +107,7 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 		SFV_SPEEDRUNNER, VAR_STILL_PRESENT);
 
 	//Set the savefile
-	crayon_savefile_solidify(details);
+	if(crayon_savefile_solidify(details)){return 1;}
 
 	// for(i = 0; i < CRAY_NUM_TYPES; i++){
 	// 	printf("Lengths %d\n", details->savedata.lengths[i]);

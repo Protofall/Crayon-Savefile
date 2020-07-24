@@ -2,10 +2,10 @@
 
 //Its a path to the folder where it will try to save to
 char *__savefile_path = NULL;
-uint16_t __savefile_path_length;
+uint16_t __savefile_path_length = 0;
 
-//Dreamcast: Rounds the number down to nearest multiple of 512 , then adds 1 if there's a remainder
-//PC: Returns 0 (Function isn't needed on PC anyways)
+//Rounds the number down to nearest multiple of 512, then adds 1 if there's a remainder
+//(Function is only useful for Dreamcast)
 uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes){
 	return (bytes >> 9) + !!(bytes & ((1 << 9) - 1));
 }
@@ -14,8 +14,13 @@ uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes){
 uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
 	#ifdef _arch_dreamcast
 
-	// uint16_t eyecatcher_size = vmu_eyecatch_size();
-	// if(eyecatcher_size < 0){return 0;}
+	//When vmu_eyecatch_size() is made non-static, switch over
+	#if 0
+
+	uint16_t eyecatcher_size = vmu_eyecatch_size();
+	if(eyecatcher_size < 0){return 0;}
+
+	#else
 
 	uint16_t eyecatcher_size = 0;
 	switch(details->eyecatcher_type){
@@ -31,12 +36,14 @@ uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
 			return 0;
 	}
 
+	#endif
+
 	//Get the total number of bytes. Keep in mind we need to think about the icon/s and EC
-	return CRAY_SF_HDR_SIZE + (512 * details->icon_anim_count) + eyecatcher_size + details->savedata_size;
+	return CRAY_SF_HDR_SIZE + (512 * details->icon_anim_count) + eyecatcher_size + details->savedata.size;
 
 	#else
 
-	return CRAY_SF_HDR_SIZE + details->savedata_size;
+	return CRAY_SF_HDR_SIZE + details->savedata.size;
 
 	#endif
 }
@@ -109,7 +116,7 @@ void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buff
 	crayon_misc_encode_to_buffer(buffer, (uint8_t*)data.chars, sizeof(char) * data.lengths[CRAY_TYPE_CHAR]);
 	buffer += (sizeof(char) * data.lengths[CRAY_TYPE_CHAR]);
 
-	// printf("Size %d. Size we should have %d\n", (int)(buffer - buffer_old), details->savedata_size);
+	// printf("Size %d. Size we should have %d\n", (int)(buffer - buffer_old), details->savedata.size);
 
 	return;
 }
@@ -293,7 +300,7 @@ uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t 
 	}
 	else{	//If same version
 		//The size is wrong, savefile has been tampered with
-		if(details->savedata_size - sizeof(crayon_savefile_version_t) != data_length){
+		if(details->savedata.size - sizeof(crayon_savefile_version_t) != data_length){
 			return 1;
 		}
 
@@ -314,11 +321,15 @@ uint32_t crayon_savefile_get_device_free_space(int8_t device_id){
 
 	maple_device_t *vmu;
 	vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y);
+	if(!vmu){	//Device not found
+		return 0;
+	}
+
 	return vmufs_free_blocks(vmu) * 512;
 	
 	#else
 
-	//Yeah, idk how to get system's remaining space size in C
+	//Yeah, idk how to get system's remaining space size in C without exec/system
 	return INT32_MAX;
 	
 	#endif
@@ -327,7 +338,6 @@ uint32_t crayon_savefile_get_device_free_space(int8_t device_id){
 //It will construct the full string for you
 char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t save_device_id){
 	if(save_device_id < 0 || save_device_id >= CRAY_SF_NUM_SAVE_DEVICES){
-		printf("Test\n");
 		return NULL;
 	}
 
@@ -342,8 +352,8 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 
 	#endif
 
-	char *path;
-	if(!(path = malloc(length * sizeof(char)))){
+	char *path = malloc(length * sizeof(char));
+	if(!path){
 		return NULL;
 	}
 
@@ -357,6 +367,7 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 		return NULL;
 	}
 
+	//Faster than constructing the string and then strcat-ing it
 	uint32_t curr_length = strlen(path);
 	path[curr_length    ] = port_and_slot.x + 'a';
 	path[curr_length + 1] = port_and_slot.y + '0';
@@ -382,6 +393,7 @@ void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata){
 		printf("%d, ", savedata->lengths[i]);
 	}
 	printf("\n");
+	printf("SIZE: %d\n\n", savedata->size);
 
 	printf("Double\n");
 	for(i = 0; i < savedata->lengths[CRAY_TYPE_DOUBLE]; i++){
@@ -478,14 +490,16 @@ uint8_t crayon_savefile_set_string(crayon_savefile_details_t *details, const cha
 	uint16_t string_length = strlen(string);
 	if(max_length == 0 || string_length >= max_length){return 1;}
 
-	strncpy(details->strings[string_id], string, string_length + 1);
-	details->strings[string_id][max_length - 1] = '\0';
+	strncpy(details->strings[string_id], string, max_length);
 
 	return 0;
 }
 
 //THIS CAN BE OPTIMISED
 uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t save_device_id){
+	//Just incase an error happens, this will at least set it to something
+	details->savefile_versions[save_device_id] = details->latest_version;
+
 	char *savename = crayon_savefile_get_full_path(details, save_device_id);
 	if(!savename){
 		printf("FAILED AT 1\n");
@@ -499,7 +513,7 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 	//File DNE
 	if(!fp){
 		printf("FAILED AT 2\n");
-		return 2;
+		return 1;
 	}
 
 	#if defined( _arch_dreamcast)
@@ -520,15 +534,15 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 	if(vmu_pkg_parse(pkg_out, &pkg)){	//CRC is incorrect
 		printf("FAILED AT 3\n");
 		free(pkg_out);
-		return 3;
+		return 1;
 	}
 
 	free(pkg_out);
 
-	//If the version IDs don't match, then can can't comprehend that savefile
+	//If the version IDs don't match, then this isn't the right savefile
 	if(strcmp(pkg.app_id, details->strings[CRAY_SF_STRING_APP_ID])){
 		printf("FAILED AT 4\n");
-		return 4;
+		return 1;
 	}
 
 	//Check to confirm the savefile version is not newer than it should be
@@ -553,7 +567,7 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 	//(The later should never trigger if you use this library right)
 	if(strcmp(hdr.app_id, details->strings[CRAY_SF_STRING_APP_ID])){
 		printf("FAILED AT 4\n");
-		return 4;
+		return 1;
 	}
 
 	// printf("read version %d. our version %d\n", sf_version, details->version);
@@ -561,13 +575,6 @@ uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_
 	#endif
 
 	details->savefile_versions[save_device_id] = sf_version;
-
-	//Check to confirm the savefile version is not newer than it should be
-	// if(sf_version > details->latest_version){
-	// 	printf("FAILED AT 5\n");
-	// 	return 5;
-	// }
-
 
 	return 0;
 }
@@ -592,16 +599,10 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 		#endif
 
 		//Check everything went fine, it returns 0
-		uint8_t check_result = crayon_savefile_check_savedata(details, i);
-		if(check_result){
-			//If a savefile is newer than our system, then we leave the whole device alone
-			if(check_result != 2 ||
-				details->savefile_versions[i] > details->latest_version){
-				continue;
-			}
-
+		if(crayon_savefile_check_savedata(details, i)){
 			char *savename = crayon_savefile_get_full_path(details, i);
 			if(!savename){
+				printf("update valid saves: 1\n");
 				continue;
 			}
 
@@ -609,13 +610,23 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 			uint32_t size_bytes;
 			fp = fopen(savename, "rb");
 			free(savename);
-			if(!fp){	//This usually means check_result was equal to 2
-				continue;
+			if(!fp){	//This usually means the file doesn't exist
+				printf("update valid saves: 2\n");
+				size_bytes = details->savedata.size;
 			}
+			else{
+				fseek(fp, 0, SEEK_END);
+				size_bytes = ftell(fp);
+				fclose(fp);
 
-			fseek(fp, 0, SEEK_END);
-			size_bytes = ftell(fp);
-			fclose(fp);
+				//If a savefile is newer than our system, then we leave the whole device alone
+				//We don't run this check if no pre-existing savefile was present because
+				//The LHS won't make sense
+				if(details->savefile_versions[i] > details->latest_version){
+					printf("update valid saves: 3\n");
+					continue;
+				}
+			}
 
 			#if defined(_arch_pc)
 			
@@ -626,14 +637,18 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 
 			crayon_savefile_set_device_bit(&present_devices, i);
 			if(crayon_savefile_get_device_free_space(i) >= size_bytes){
+				printf("update valid saves: 4\n");
 				crayon_savefile_set_device_bit(&present_devices, i);
 			}
 		}
 		else{
+			printf("update valid saves: 5\n");
 			if(details->savefile_versions[i] <= details->latest_version){
+				printf("update valid saves: 6\n");
 				crayon_savefile_set_device_bit(&present_devices, i);
 				crayon_savefile_set_device_bit(&present_savefiles, i);
 				if(details->savefile_versions[i] == details->latest_version){
+					printf("update valid saves: 7\n");
 					crayon_savefile_set_device_bit(&current_savefiles, i);
 				}
 			}
@@ -641,9 +656,70 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 		}
 	}
 
+	printf("present/current: %d %d %d\n", present_devices, present_savefiles, current_savefiles);
+
 	details->present_devices = present_devices;
 	details->present_savefiles = present_savefiles;
 	details->current_savefiles = current_savefiles;
+
+	return;
+}
+
+
+void crayon_savefile_free_icon(crayon_savefile_details_t *details){
+	#ifdef _arch_dreamcast
+
+	if(details->icon_data){free(details->icon_data);}
+	if(details->icon_palette){free(details->icon_palette);}
+	details->icon_anim_count = 0;
+	details->icon_anim_speed = 0;
+	details->icon_data = NULL;
+	details->icon_palette = NULL;
+
+	#endif
+
+	return;
+}
+
+void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details){
+	#ifdef _arch_dreamcast
+
+	if(details->eyecatcher_data){free(details->eyecatcher_data);}
+	details->eyecatcher_type = 0;
+	details->eyecatcher_data = NULL;
+
+	#endif
+
+	return;
+}
+
+void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata){
+	if(savedata->doubles){free(savedata->doubles);}
+	if(savedata->floats){free(savedata->floats);}
+	if(savedata->u32){free(savedata->u32);}
+	if(savedata->s32){free(savedata->s32);}
+	if(savedata->u16){free(savedata->u16);}
+	if(savedata->s16){free(savedata->s16);}
+	if(savedata->u8){free(savedata->u8);}
+	if(savedata->s8){free(savedata->s8);}
+	if(savedata->chars){free(savedata->chars);}
+
+	savedata->doubles = NULL;
+	savedata->floats = NULL;
+	savedata->u32 = NULL;
+	savedata->s32 = NULL;
+	savedata->u16 = NULL;
+	savedata->s16 = NULL;
+	savedata->u8 = NULL;
+	savedata->s8 = NULL;
+	savedata->chars = NULL;
+
+	uint8_t i;
+	for(i = 0; i < CRAY_NUM_TYPES; i++){
+		savedata->lengths[i] = 0;
+	}
+
+	savedata->size = 0;
 
 	return;
 }
@@ -659,7 +735,7 @@ void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_
 	return;
 }
 
-uint8_t crayon_savefile_set_path(char *path){
+uint8_t crayon_savefile_set_base_path(char *path){
 	if(__savefile_path){
 		free(__savefile_path);
 	}
@@ -686,7 +762,7 @@ uint8_t crayon_savefile_set_path(char *path){
 
 	#endif
 
-	__savefile_path_length = strlen(__savefile_path);
+	__savefile_path_length = length;
 	return 0;
 }
 
@@ -714,12 +790,11 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 	for(i = 0; i < CRAY_NUM_TYPES; i++){
 		details->savedata.lengths[i] = 0;
 	}
+	details->savedata.size = 0;
 
 	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
-		details->savefile_versions[i] = 0;
+		details->savefile_versions[i] = latest_version;	//This will be updated by the check_savedata function
 	}
-
-	details->savedata_size = 0;	//For now
 
 	#ifdef _arch_dreamcast
 
@@ -728,9 +803,15 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 	details->icon_anim_count = 0;
 
 	details->eyecatcher_data = NULL;
-	details->eyecatcher_type = VMUPKG_EC_NONE;	//The default
+	details->eyecatcher_type = VMUPKG_EC_NONE;	//The default, no eyecatcher
 	
 	#endif
+
+	details->save_device_id = -1;
+
+	details->history = NULL;
+	details->history_tail = NULL;
+	details->num_vars = 0;
 
 	uint16_t str_lengths[CRAY_SF_NUM_DETAIL_STRINGS];
 	for(i = 0; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
@@ -739,34 +820,25 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 		details->strings[i] = malloc(sizeof(char) * str_lengths[i]);
 	}
 
+	uint8_t error = 0;
 	for(i = 0; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
 		if(!details->strings[i]){
-			//Need to properly un-allocate stuff
-			uint8_t j;
-			for(j = 0; j < CRAY_SF_NUM_DETAIL_STRINGS; j++){
-				if(details->strings[j]){free(details->strings[j]);}
-			}
-
-			return 1;
+			error = 1;
 		}
 	}
 
-	//Given string is too big (Plus 1 for null terminator)
-	if(save_name_length + 1 > str_lengths[CRAY_SF_STRING_FILENAME]){
+	//Given string is too big (Plus 1 for null terminator) or a previous error occured
+	if(error || save_name_length + 1 > str_lengths[CRAY_SF_STRING_FILENAME]){
+		//Need to properly un-allocate stuff
 		for(i = 0; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
 			if(details->strings[i]){free(details->strings[i]);}
 		}
+
 		return 1;
 	}
 
-	//Copy the savename here
+	//Copy the savename
 	strncpy(details->strings[CRAY_SF_STRING_FILENAME], save_name, str_lengths[CRAY_SF_STRING_FILENAME]);
-
-	details->save_device_id = -1;
-
-	details->history = NULL;
-	details->history_tail = NULL;
-	details->num_vars = 0;
 
 	details->default_values_func = default_values_func;
 	details->update_savefile_func = update_savefile_func;
@@ -774,55 +846,53 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 	return 0;
 }
 
-uint8_t crayon_savefile_add_icon(crayon_savefile_details_t *details, const char *image, const char *palette,
+uint8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *image, const char *palette,
 	uint8_t icon_anim_count, uint16_t icon_anim_speed){
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 
-	FILE *icon_data_file;
-	int size_data;
-
+	//Since BIOS can't render more than 3 for some reason
 	if(icon_anim_count > 3){
 		return 1;
 	}
 
-	if(!(icon_data_file = fopen(image, "rb"))){
+	FILE *fp = fopen(image, "rb");
+	uint32_t size;
+
+	if(!fp){
 		return 1;
 	}
 
 	//Get the size of the file
-	fseek(icon_data_file, 0, SEEK_END);
-	size_data = ftell(icon_data_file);	//This will account for multi-frame icons
-	fseek(icon_data_file, 0, SEEK_SET);
+	fseek(fp, 0, SEEK_END);
+	size = ftell(fp);	//This will account for multi-frame icons
+	fseek(fp, 0, SEEK_SET);
 
-	if(!(details->icon_data = malloc(size_data))){
-		fclose(icon_data_file);
+	if(!(details->icon_data = malloc(size))){
+		fclose(fp);
 		return 1;
 	}
 
-	fread(details->icon_data, size_data, 1, icon_data_file);
-	fclose(icon_data_file);
+	fread(details->icon_data, size, 1, fp);
+	fclose(fp);
 
 
 	//--------------------------------
 
-	FILE *icon_palette_file;
-	int size_palette;
-
-	if(!(icon_palette_file = fopen(palette, "rb"))){
+	if(!(fp = fopen(palette, "rb"))){
 		return 1;
 	}
 
-	fseek(icon_palette_file, 0, SEEK_END);
-	size_palette = ftell(icon_palette_file);
-	fseek(icon_palette_file, 0, SEEK_SET);
+	fseek(fp, 0, SEEK_END);
+	size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
 
-	if(!(details->icon_palette = malloc(size_palette))){
-		fclose(icon_palette_file);
+	if(!(details->icon_palette = malloc(size))){
+		fclose(fp);
 		return 1;
 	}
 
-	fread(details->icon_palette, size_palette, 1, icon_palette_file);
-	fclose(icon_palette_file);
+	fread(details->icon_palette, size, 1, fp);
+	fclose(fp);
 
 	details->icon_anim_count = icon_anim_count;
 	details->icon_anim_speed = icon_anim_speed;
@@ -832,8 +902,8 @@ uint8_t crayon_savefile_add_icon(crayon_savefile_details_t *details, const char 
 	return 0;
 }
 
-uint8_t crayon_savefile_add_eyecatcher(crayon_savefile_details_t *details, const char *eyecatcher_path){
-	#ifdef _arch_dreamcast
+uint8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const char *eyecatcher_path){
+	#if defined(_arch_dreamcast)
 
 	FILE *eyecatcher_data_file = fopen(eyecatcher_path, "rb");
 	if(!eyecatcher_data_file){
@@ -862,12 +932,8 @@ uint8_t crayon_savefile_add_eyecatcher(crayon_savefile_details_t *details, const
 		return 1;
 	}
 
-	uint8_t result = (fread(details->eyecatcher_data, size_data, 1, eyecatcher_data_file) != 1);
+	fread(details->eyecatcher_data, size_data, 1, eyecatcher_data_file);
 	fclose(eyecatcher_data_file);
-	
-	if(result){
-		return 1;
-	}
 
 	#endif
 
@@ -1061,7 +1127,7 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	//Set the default values with the user's function
 	(*details->default_values_func)();
 
-	details->savedata_size = sizeof(crayon_savefile_version_t) +
+	details->savedata.size = sizeof(crayon_savefile_version_t) +
 		(lengths[CRAY_TYPE_DOUBLE] * sizeof(double)) +
 		(lengths[CRAY_TYPE_FLOAT] * sizeof(float)) +
 		(lengths[CRAY_TYPE_UINT32] * sizeof(uint32_t)) +
@@ -1183,7 +1249,7 @@ uint8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 
 	FILE *fp;
 
-	uint32_t length = details->savedata_size;
+	uint32_t length = details->savedata.size;
 	uint8_t *data = malloc(length);
 	if(!data){
 		free(savename);
@@ -1329,62 +1395,8 @@ void crayon_savefile_free(crayon_savefile_details_t *details){
 		details->strings[i] = NULL;
 	}
 
-	return;
-}
-
-void crayon_savefile_free_icon(crayon_savefile_details_t *details){
-	#ifdef _arch_dreamcast
-
-	if(details->icon_data){free(details->icon_data);}
-	if(details->icon_palette){free(details->icon_palette);}
-	details->icon_anim_count = 0;
-	details->icon_anim_speed = 0;
-
-	details->icon_data = NULL;
-	details->icon_palette = NULL;
-
-	#endif
-
-	return;
-}
-
-void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details){
-	#ifdef _arch_dreamcast
-
-	if(details->eyecatcher_data){free(details->eyecatcher_data);}
-	details->eyecatcher_data = NULL;
-	details->eyecatcher_type = 0;
-
-	#endif
-
-	return;
-}
-
-void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata){
-	if(savedata->doubles){free(savedata->doubles);}
-	if(savedata->floats){free(savedata->floats);}
-	if(savedata->u32){free(savedata->u32);}
-	if(savedata->s32){free(savedata->s32);}
-	if(savedata->u16){free(savedata->u16);}
-	if(savedata->s16){free(savedata->s16);}
-	if(savedata->u8){free(savedata->u8);}
-	if(savedata->s8){free(savedata->s8);}
-	if(savedata->chars){free(savedata->chars);}
-
-	savedata->doubles = NULL;
-	savedata->floats = NULL;
-	savedata->u32 = NULL;
-	savedata->s32 = NULL;
-	savedata->u16 = NULL;
-	savedata->s16 = NULL;
-	savedata->u8 = NULL;
-	savedata->s8 = NULL;
-	savedata->chars = NULL;
-
-	uint8_t i;
-	for(i = 0; i < CRAY_NUM_TYPES; i++){
-		savedata->lengths[i] = 0;
-	}
+	details->default_values_func = NULL;
+	details->update_savefile_func = NULL;
 
 	return;
 }
@@ -1393,6 +1405,7 @@ void crayon_savefile_free_base_path(){
 	if(__savefile_path){
 		free(__savefile_path);
 		__savefile_path = NULL;
+		__savefile_path_length = 0;
 	}
 
 	return;

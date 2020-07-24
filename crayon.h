@@ -28,7 +28,7 @@
 //Checks if the computer running this code is big endian or not
 uint8_t crayon_misc_is_big_endian();
 
-void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//WIP
+void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//UNFINISHED
 
 void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 
@@ -36,24 +36,9 @@ void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 uint32_t crayon_misc_get_bit(uint32_t number, uint8_t index);
 void crayon_misc_set_bit(uint32_t *number, uint8_t index);
 
-#define CRAYON_BOOT_MODE 0	//Load assets from cd dir instead of sd
-
 #if defined(_arch_dreamcast)
 
 #include <kos/fs_romdisk.h> //For romdisk swapping
-
-#if CRAYON_BOOT_MODE == 1
-//For mounting the sd dir
-#include <dc/sd.h>
-#include <kos/blockdev.h>
-#include <ext2/fs_ext2.h>
-
-#define MNT_MODE FS_EXT2_MOUNT_READWRITE	//Might manually change it so its not a define anymore
-
-void unmount_ext2_sd();
-int mount_ext2_sd();
-
-#endif
 
 uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint);
 
