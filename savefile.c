@@ -12,7 +12,7 @@ uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes){
 
 //I used the "vmu_pkg_build" function's source as a guide for this. Doesn't work with compressed saves
 uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 
 	//When vmu_eyecatch_size() is made non-static, switch over
 	#if 0
@@ -314,7 +314,7 @@ uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t 
 	return 0;
 }
 
-uint32_t crayon_savefile_get_device_free_space(int8_t device_id){
+uint32_t crayon_savefile_check_device_free_space(int8_t device_id){
 	#if defined(_arch_dreamcast)
 	
 	vec2_s8_t port_and_slot = crayon_peripheral_dreamcast_get_port_and_slot(device_id);
@@ -586,6 +586,7 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 	uint8_t current_savefiles = 0;
 
 	FILE *fp;
+	char *savename;
 
 	uint8_t i;
 	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
@@ -598,62 +599,73 @@ void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details){
 
 		#endif
 
-		//Check everything went fine, it returns 0
-		if(crayon_savefile_check_savedata(details, i)){
-			char *savename = crayon_savefile_get_full_path(details, i);
-			if(!savename){
-				printf("update valid saves: 1\n");
-				continue;
-			}
+		savename = crayon_savefile_get_full_path(details, i);
+		if(!savename){
+			printf("update valid saves: 1\n");
+			continue;
+		}
 
+		//Returns 0 if fine
+		//If check threw an error, either it failed to construct the path string, open the file pointer
+		//Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
+		//So if the savefile does exist, then we say the device isn't present, else we check for space and see
+		if(crayon_savefile_check_savedata(details, i)){
 			//Calculate the size of the savefile to make sure if we have enough space
-			uint32_t size_bytes;
 			fp = fopen(savename, "rb");
-			free(savename);
 			if(!fp){	//This usually means the file doesn't exist
 				printf("update valid saves: 2\n");
-				size_bytes = details->savedata.size;
-			}
-			else{
-				fseek(fp, 0, SEEK_END);
-				size_bytes = ftell(fp);
-				fclose(fp);
 
-				//If a savefile is newer than our system, then we leave the whole device alone
-				//We don't run this check if no pre-existing savefile was present because
-				//The LHS won't make sense
-				if(details->savefile_versions[i] > details->latest_version){
-					printf("update valid saves: 3\n");
-					continue;
+				//Can't use details->savedata.size, doesn't include hdr and stuff
+				if(crayon_savefile_get_savefile_size(details) <= crayon_savefile_check_device_free_space(i)){
+					printf("update valid saves: 4\n");
+					crayon_savefile_set_device_bit(&present_devices, i);
 				}
 			}
-
-			#if defined(_arch_pc)
-			
-			//Add a check here to see if the path is valid and if it can be writen to
-			;
-
-			#endif
-
-			crayon_savefile_set_device_bit(&present_devices, i);
-			if(crayon_savefile_get_device_free_space(i) >= size_bytes){
-				printf("update valid saves: 4\n");
-				crayon_savefile_set_device_bit(&present_devices, i);
+			else{	//File does exist, so it must be invalid if check failed
+				//We don't even set "present_savefiles" since the savefile is possibly corrupted
+				printf("update valid saves: 3\n");
+				fclose(fp);
 			}
 		}
 		else{
-			printf("update valid saves: 5\n");
-			if(details->savefile_versions[i] <= details->latest_version){
-				printf("update valid saves: 6\n");
+			crayon_savefile_set_device_bit(&present_savefiles, i);	//Even if we can't use it, we still show it
+
+			if(details->savefile_versions[i] == details->latest_version){
 				crayon_savefile_set_device_bit(&present_devices, i);
-				crayon_savefile_set_device_bit(&present_savefiles, i);
-				if(details->savefile_versions[i] == details->latest_version){
-					printf("update valid saves: 7\n");
-					crayon_savefile_set_device_bit(&current_savefiles, i);
-				}
+				crayon_savefile_set_device_bit(&current_savefiles, i);
 			}
-			//If its greater than, then we just leave it alone and say the device isn't present
+			else if(details->savefile_versions[i] < details->latest_version){
+
+				fp = fopen(savename, "rb");
+				if(!fp){	//Shouldn't occur
+					continue;
+				}
+
+				fseek(fp, 0, SEEK_END);
+				uint32_t current_save_size = ftell(fp);
+				fclose(fp);
+
+				#if defined(_arch_dreamcast)
+
+				//Not a multiple of 512, fix it
+				if(current_save_size % (1 << 9) != 0){
+					current_save_size &= ~((1 << 9) - 1);	//Rounds down to nearest multiple of 512
+					current_save_size += 512;	//Round up
+				}
+
+				#endif
+
+				if(crayon_savefile_get_savefile_size(details) <= crayon_savefile_check_device_free_space(i) +
+					current_save_size){
+					crayon_savefile_set_device_bit(&present_devices, i);
+				}
+
+				
+			}
+			//If the version is greater, then we just leave it alone and say the device isn't present
 		}
+
+		free(savename);
 	}
 
 	printf("present/current: %d %d %d\n", present_devices, present_savefiles, current_savefiles);
@@ -940,23 +952,21 @@ uint8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const
 	return 0;
 }
 
-int32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *data_ptr, uint8_t data_type, 
+uint32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *data_ptr, uint8_t data_type, 
 	uint32_t length, crayon_savefile_version_t version_added, crayon_savefile_version_t version_removed){
 
-	if(details->num_vars < 0){
-		printf("You managed to make 2,147,483,648 unique variables\nI think you're doing something wrong\n");
-		return -1;
+	if(details->num_vars == INT32_MAX){
+		printf("You managed to make 4,294,967,295 unique variables\nI think you're doing something wrong\n");
+		return 0;
 	}
-
-	// printf("id is: %d\n", details->num_vars);
 
 	//data_type id doesn't map to any of our types
 	if(data_type >= CRAY_NUM_TYPES){
-		return -1;
+		return 0;
 	}
 
 	crayon_savefile_history_t *var = malloc(sizeof(crayon_savefile_history_t));
-	if(!var){return -1;}
+	if(!var){return 0;}
 
 	//Add the new variable
 	var->next = NULL;
@@ -978,7 +988,7 @@ int32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *d
 
 	details->savedata.lengths[var->data_type] += var->data_length;
 
-	//Store a pointer to the type and the default value
+	//Store the pointer's address so we can change it later
 	switch(var->data_type){
 		case CRAY_TYPE_DOUBLE:
 			var->data_ptr.t_double = (double**)data_ptr;
@@ -1288,7 +1298,7 @@ uint8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	// }
 
 	//Make sure there's enough free space on the VMU.
-	// if(crayon_savefile_get_device_free_space(details->save_device_id) + bytes_freed <
+	// if(crayon_savefile_check_device_free_space(details->save_device_id) + bytes_freed <
 	// 	crayon_savefile_bytes_to_blocks(pkg_size)){
 	// 	free(pkg_out);
 	// 	free(savename);

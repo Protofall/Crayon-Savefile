@@ -139,7 +139,7 @@ typedef struct crayon_savefile_details{
 	//The following 3 variables are bitmaps
 	uint8_t present_devices;	//Shows any device thats present that has enough space to save too
 	uint8_t present_savefiles;	//Shows any device with any savefile from any version
-	uint8_t current_savefiles;	//Only shows savefiles in the current format
+	uint8_t current_savefiles;	//Only shows savefiles in the current version
 	crayon_savefile_version_t savefile_versions[CRAY_SF_NUM_SAVE_DEVICES];	//Stores the versions of savefiles detected
 
 	//This tells us what storage device we save to
@@ -189,7 +189,7 @@ uint16_t crayon_savefile_detail_string_length(uint8_t string_id);
 void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer);
 uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
 
-uint32_t crayon_savefile_get_device_free_space(int8_t device_id);
+uint32_t crayon_savefile_check_device_free_space(int8_t device_id);
 
 //Returns a pointer on success, returns NULL if either the the save_device_id is OOB or failed malloc
 char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t save_device_id);
@@ -255,9 +255,9 @@ uint8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char 
 
 uint8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const char *eyecatch_path);
 
-//Return type is the id of the variable. Starts at 1, if the function returns 0 then an error occured
-//Note that if a variable still exists, for version_removed we set it to zero
-int32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *data_ptr, uint8_t data_type, 
+//Return type is the id of the variable. Returns the id, but will also return 0 on error
+//Note that if a variable still exists, for version_removed we set it to the latest version + 1
+uint32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *data_ptr, uint8_t data_type, 
 	uint32_t length, crayon_savefile_version_t version_added, crayon_savefile_version_t version_removed);
 
 //To be used in the user's update function to reference the old variables
