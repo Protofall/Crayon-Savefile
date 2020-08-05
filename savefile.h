@@ -31,25 +31,6 @@ enum {
 	CRAY_NUM_TYPES	//This will be the number of types we have available
 };
 
-typedef union crayon_savefile_old_variables{
-	uint8_t data_type;
-	// void *ptr; //(since the user will probably use the built-in function instead)
-	//WHY AM I USING A UNION-OF-POINTERS INSTEAD OF A VOID POINTER. Both are 8 bytes in size, right?
-	//Well, on Dreamcast the union is only 4 bytes since a double is just a float over there
-	//due to a compiler flag being forced due to the GCC patches
-	union{
-		double *t_double;
-		float *t_float;
-		uint32_t *t_u32;
-		int32_t *t_s32;
-		uint16_t *t_u16;
-		int16_t *t_s16;
-		uint8_t *t_u8;
-		int8_t *t_s8;
-		char *t_char;
-	};
-} crayon_savefile_old_variable_t;
-
 //This is never accessed directly by the user, but it will contain all of you variables that will get saved
 typedef struct crayon_savefile_data{
 	double *doubles;
@@ -154,8 +135,7 @@ typedef struct crayon_savefile_details{
 	//The functions the user provides for setting the default values of a new savefile and
 	//how to handle older savefiles in the new system
 	void (*default_values_func)();
-	uint8_t (*update_savefile_func)(crayon_savefile_old_variable_t*,
-	crayon_savefile_version_t, crayon_savefile_version_t);
+	int8_t (*update_savefile_func)(void**, crayon_savefile_version_t, crayon_savefile_version_t);
 
 	//Dreamcast exclusive variables
 	#if defined(_arch_dreamcast)
@@ -187,7 +167,7 @@ uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details);
 uint16_t crayon_savefile_detail_string_length(uint8_t string_id);
 
 void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer);
-uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
+int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
 
 uint32_t crayon_savefile_check_device_free_space(int8_t device_id);
 
@@ -202,10 +182,11 @@ void crayon_savefile_buffer_to_savedata(crayon_savefile_data_t *data, uint8_t *b
 uint8_t crayon_savefile_set_string(crayon_savefile_details_t *details, const char *string, uint8_t string_id);
 
 //Returns 0 if a savefile on that device exists with no issues, 1 if there's an error/DNE/version is newer than latest
-uint8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t save_device_id);
+int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t save_device_id);
 
 //This function will update the valid devices and/or the current savefile bitmaps
-void crayon_savefile_update_valid_saves(crayon_savefile_details_t *details);
+void crayon_savefile_update_all_device_infos(crayon_savefile_details_t *details);
+int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, int8_t save_device_id);
 
 void crayon_savefile_free_icon(crayon_savefile_details_t *details);
 void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details);
@@ -215,9 +196,9 @@ void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata);
 //---------------Stuff the user should be calling----------------
 
 
-//These two are more so wrapper functions for the crayon_misc bit setter/getters
+//Basically get/setting bits from a bitmap
 uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
-void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
+inline void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
 
 uint8_t crayon_savefile_set_base_path(char *path);	//On Dreamcast this is always "/vmu/" and it will ignore the param
 
@@ -228,8 +209,7 @@ uint8_t crayon_savefile_set_base_path(char *path);	//On Dreamcast this is always
 	//the variable history.
 uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details, const char *save_name,
 	crayon_savefile_version_t latest_version, void (*default_values_func)(),
-	uint8_t (*update_savefile_func)(crayon_savefile_old_variable_t*, crayon_savefile_version_t,
-	crayon_savefile_version_t));
+	int8_t (*update_savefile_func)(void**, crayon_savefile_version_t, crayon_savefile_version_t));
 
 #define crayon_savefile_set_app_id(details, string) \
 crayon_savefile_set_string(details, string, CRAY_SF_STRING_APP_ID);
@@ -260,15 +240,12 @@ uint8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const
 uint32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *data_ptr, uint8_t data_type, 
 	uint32_t length, crayon_savefile_version_t version_added, crayon_savefile_version_t version_removed);
 
-//To be used in the user's update function to reference the old variables
-void *crayon_savefile_get_variable_ptr(crayon_savefile_old_variable_t *array, uint32_t index);
-
 //Once the history is fully constructed, we can then build our actual savefile with this fuction
 uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details);
 
 //Returns 0 on success and 1 or more if failure. Handles loading and saving of uncompressed savefiles
-uint8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details);
-uint8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
+int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details);
+int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
 
 //This will delete the saved savefile 
 uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details);	//UNFINISHED. INCOMPLETE

@@ -9,8 +9,8 @@
 
 
 void savefile_defaults();
-uint8_t update_savefile(crayon_savefile_old_variable_t *loaded_savedata,
-	crayon_savefile_version_t loaded_version, crayon_savefile_version_t latest_version);
+int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded_version,
+	crayon_savefile_version_t latest_version);
 
 uint8_t setup_savefile(crayon_savefile_details_t * details);
 
