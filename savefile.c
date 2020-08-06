@@ -743,6 +743,14 @@ void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata){
 	return;
 }
 
+uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id){
+	return (device_bitmap >> save_device_id) & 1;
+}
+
+void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id){
+	*device_bitmap |= 1 << save_device_id;
+}
+
 uint8_t crayon_savefile_set_base_path(char *path){
 	if(__savefile_path){
 		free(__savefile_path);
