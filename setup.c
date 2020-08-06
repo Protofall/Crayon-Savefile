@@ -42,6 +42,10 @@ int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded
 	//We also assume the user's var IDs are globally accessable or they manually used them here as magic numbers
 	;
 
+	// double *ptr_double = loaded_variables[index];
+	// user_ptr[i] = ptr_double[i];
+
+
 	return 0;
 }
 

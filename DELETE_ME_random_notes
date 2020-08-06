@@ -169,14 +169,13 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, int8_t save_device_id);
 uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details);
 void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer);
+int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details);
+int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
+
 
 //Should be good, but need to make sure we can compile first
 uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
 
-
-//ONES THAT HAVEN'T BEEN
-int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details);
-int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
 
 //UNFINISHED
 uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details);

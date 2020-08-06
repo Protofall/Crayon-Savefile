@@ -30,7 +30,6 @@ int main(){
 	uint8_t save_error = 1;
 	if(savefile_details.present_devices){
 		save_error = crayon_savefile_save_savedata(&savefile_details);
-		// crayon_savefile_update_valid_saves(&savefile_details, CRAY_SAVEFILE_UPDATE_MODE_SAVE_PRESENT);	//Updating the save
 	}
 
 	#if defined(_arch_dreamcast)
@@ -65,23 +64,9 @@ int main(){
 		pvr_scene_begin();
 
 		pvr_list_begin(PVR_LIST_TR_POLY);
+
 			draw_string(30, 30, 1, 255, 255, 216, 0, buffer, 2, 2);
-			// switch(save_error){
-			// 	case 1:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, buffer, 2, 2); break;
-			// 	case 0:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Selected device isn't a VMU", 2, 2); break;
-			// 	case 2:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Selected VMU doesn't have enough space", 2, 2); break;
-			// 	case 3:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Ran out of memory when making savefile", 2, 2); break;
-			// 	case 4:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Not enough space on VMU for savefile", 2, 2); break;
-			// 	case 5:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Couldn't access savefile on VMU", 2, 2); break;
-			// 	case 6:
-			// 		draw_string(30, 30, 1, 255, 255, 216, 0, "Couldn't write to VMU", 2, 2); break;
-			// }
+		
 		pvr_list_finish();
 
 

@@ -119,6 +119,7 @@ typedef struct crayon_savefile_details{
 
 	//The following 3 variables are bitmaps
 	uint8_t present_devices;	//Shows any device thats present that has enough space to save too
+								//(Unless there's a savefile newer than latest present)
 	uint8_t present_savefiles;	//Shows any device with any savefile from any version
 	uint8_t current_savefiles;	//Only shows savefiles in the current version
 	crayon_savefile_version_t savefile_versions[CRAY_SF_NUM_SAVE_DEVICES];	//Stores the versions of savefiles detected

@@ -133,7 +133,11 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 	//We'll also need to check if the version number is valid
 	if(loaded_version > details->latest_version){
 		printf("SAVEFILE TOO NEW\n");
-		return 1;
+		return -1;
+	}
+	else if(loaded_version == 0){
+		printf("CAN'T HAVE SAVEFILE OF VERSION ZERO\n");
+		return -1;
 	}
 
 	// printf("loaded_version %d\n", loaded_version);
@@ -170,7 +174,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		//The size is off, the savefile must have been tampered with
 		if(expected_size != data_length){
 			printf("Deserial, wrong sizes: %d %d\n", expected_size, data_length);
-			return 1;
+			return -1;
 		}
 
 		//Allocate space for our arrays
@@ -194,7 +198,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 
 			if(array){free(array);}
 
-			return 1;
+			return -1;
 		}
 
 		//Convert the buffer into our savedata struct
@@ -212,10 +216,8 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 				switch(curr->data_type){
 					case CRAY_TYPE_DOUBLE:
 						array[index] = old_savedata.doubles + pointers[curr->data_type];
-						// double *ptr = array[index];
 						for(i = 0; i < curr->data_length; i++){
 							(*curr->data_ptr.t_double)[i] = ((double*)array[index])[i];
-							// (*curr->data_ptr.t_double)[i] = ptr[i];
 						}
 						break;
 					case CRAY_TYPE_FLOAT:
@@ -293,7 +295,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 	else{	//If same version
 		//The size is wrong, savefile has been tampered with
 		if(details->savedata.size - sizeof(crayon_savefile_version_t) != data_length){
-			return 1;
+			return -1;
 		}
 
 		crayon_savefile_buffer_to_savedata(new_savedata, data);
@@ -509,6 +511,8 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 		return -1;
 	}
 
+	crayon_savefile_version_t sf_version;
+
 	#if defined( _arch_dreamcast)
 
 	fseek(fp, 0, SEEK_END);
@@ -539,7 +543,6 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	}
 
 	//Check to confirm the savefile version is not newer than it should be
-	crayon_savefile_version_t sf_version;
 	crayon_misc_encode_to_buffer((uint8_t*)&sf_version, (uint8_t*)pkg.data, sizeof(crayon_savefile_version_t));
 
 	#else
@@ -548,7 +551,6 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 
 	fread(&hdr, 1, sizeof(hdr), fp);
 
-	crayon_savefile_version_t sf_version;
 	fread(&sf_version, 4, 1, fp);
 	fclose(fp);
 
@@ -634,6 +636,11 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		}
 	}
 	else{
+		//Its a system requirement that the first sf version is 1 since 0 is used to mark invalid
+		if(details->savefile_versions[save_device_id] == 0){
+			continue;
+		}
+
 		//Even if we can't use it, we still show it
 		crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 
@@ -1129,26 +1136,27 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 }
 
 int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
-	//Device isn't present, can't do anything with it
-	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
+	//Device isn't present or no savefile present, then they'res nothing to load
+	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id) ||
+		!crayon_savefile_get_device_bit(details->present_savefiles, details->save_device_id)){
 		printf("Test1\n");
-		return 1;
+		return -1;
 	}
 
 	char *savename = crayon_savefile_get_full_path(details, details->save_device_id);
 	if(!savename){
 		printf("Test2\n");
-		return 1;
+		return -1;
 	}
 
-	printf("PATH: %s\n", savename);
+	printf("LOAD PATH: %s\n", savename);
 
-	//If the savefile DNE, this will fail
+	//If the savefile DNE somehow, this will fail
 	FILE *fp = fopen(savename, "rb");
 	free(savename);
 	if(!fp){
 		printf("Test3\n");
-		return 1;
+		return -1;
 	}
 
 	fseek(fp, 0, SEEK_END);
@@ -1159,7 +1167,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	if(!data){
 		fclose(fp);
 		printf("Test4\n");
-		return 1;
+		return -1;
 	}
 
 	fread(data, pkg_size, 1, fp);
@@ -1174,6 +1182,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	}
 
 	//Check to see if pkg.data_len is actually correct or not
+	;
 
 	//Read the pkg data into my struct
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, (uint8_t *)pkg.data, (uint32_t)pkg.data_len);
@@ -1194,7 +1203,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	if(strcmp(hdr.app_id, details->strings[CRAY_SF_STRING_APP_ID])){
 		free(data);
 		printf("Test5\n");
-		return 1;
+		return -1;
 	}
 
 	//Read the pkg data into my struct
@@ -1206,6 +1215,8 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 
 	printf("Test6 %d\n", deserialise_result);
 
+	//NOTE: We don't set the current_savefile bit even if the load was successful since the saved save is still old
+
 	free(data);
 	return deserialise_result;
 }
@@ -1213,21 +1224,20 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	//Device isn't present, can't do anything with it
 	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
-		return 1;
+		return -1;
 	}
 
 	char *savename = crayon_savefile_get_full_path(details, details->save_device_id);
 	if(!savename){
-		return 1;
+		return -1;
 	}
 
 	FILE *fp;
 
-	uint32_t length = details->savedata.size;
-	uint8_t *data = malloc(length);
+	uint8_t *data = malloc(details->savedata.size);
 	if(!data){
 		free(savename);
-		return 1;
+		return -1;
 	}
 
 	crayon_savefile_serialise(details, data);
@@ -1235,7 +1245,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	#if defined(_arch_dreamcast)
 
 	vmu_pkg_t pkg;
-	sprintf(pkg.desc_long, details->strings[CRAY_SF_STRING_LONG_DESC]);
+	strncpy(pkg.desc_long, details->strings[CRAY_SF_STRING_LONG_DESC], 32);
 	strncpy(pkg.desc_short, details->strings[CRAY_SF_STRING_SHORT_DESC], 16);
 	strncpy(pkg.app_id, details->strings[CRAY_SF_STRING_APP_ID], 16);
 	pkg.icon_cnt = details->icon_anim_count;
@@ -1244,12 +1254,13 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	pkg.icon_data = details->icon_data;
 	pkg.eyecatch_type = details->eyecatcher_type;
 	pkg.eyecatch_data = details->eyecatcher_data;	//If the type is zero, this will be NULL anyways
-	pkg.data_len = length;
+	pkg.data_len = details->savedata.size;
 	pkg.data = data;
 
 	int pkg_size;
 	uint8_t *pkg_out; //Allocated in function below
 	vmu_pkg_build(&pkg, &pkg_out, &pkg_size);
+	
 	free(data);	//No longer needed
 
 	//Check if a file exists with that name, since we'll overwrite it.
@@ -1274,38 +1285,65 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	free(savename);
 	if(!fp){
 		free(pkg_out);
-		return 1;
+		return -1;
 	}
 
-	fwrite(pkg_out, sizeof(uint8_t), pkg_size, fp);
+	uint8_t write_res = (fwrite(pkg_out, sizeof(uint8_t), pkg_size, fp) != pkg_size);
 	free(pkg_out);
+	fclose(fp);
+	if(write_res){
+		return -1;
+	}
 
-	#else
+	#elif defined(_arch_pc)
+
+	//Endian-ify the data block (PC only)
+	;
 
 	fp = fopen(savename, "wb");
 	free(savename);
 	if(!fp){
 		free(data);
-		return 1;
+		return -1;
 	}
 
 	char string_buffer[32] = {0};
 	strncpy(string_buffer, "CRAYON SAVEFILE", sizeof(((crayon_savefile_hdr_t*) 0)->name));
-	fwrite(string_buffer, sizeof(char), sizeof(((crayon_savefile_hdr_t*) 0)->name), fp);
+	uint8_t write_res = (fwrite(string_buffer, sizeof(char), sizeof(((crayon_savefile_hdr_t*) 0)->name), fp) !=
+		sizeof(((crayon_savefile_hdr_t*) 0)->name));
 
-	uint8_t i;
-	for(i = CRAY_SF_STRING_APP_ID; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
-		strncpy(string_buffer, details->strings[i], crayon_savefile_detail_string_length(i));
-		fwrite(string_buffer, sizeof(char), crayon_savefile_detail_string_length(i), fp);
+	if(write_res){
+		free(data);
+		fclose(fp);
+		return -1;
 	}
 
-	fwrite(data, sizeof(uint8_t), length, fp);
+	uint8_t i;
+	uint8_t str_length;
+	for(i = CRAY_SF_STRING_APP_ID; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
+		str_length = crayon_savefile_detail_string_length(i);
+		strncpy(string_buffer, details->strings[i], str_length);
+		write_res = (fwrite(string_buffer, sizeof(char), str_length, fp) != str_length);
+		if(write_res){
+			free(data);
+			fclose(fp);
+			return -1;
+		}
+	}
 
+	write_res = (fwrite(data, sizeof(uint8_t), details->savedata.size, fp) != details->savedata.size);
 	free(data);
+	fclose(fp);
+	if(write_res){
+		return -1;
+	}
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 	
 	#endif
 
-	fclose(fp);
 
 	crayon_savefile_set_device_bit(&details->present_savefiles, details->save_device_id);
 	crayon_savefile_set_device_bit(&details->current_savefiles, details->save_device_id);
