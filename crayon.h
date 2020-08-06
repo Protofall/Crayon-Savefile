@@ -11,6 +11,8 @@
 	#error "UNSUPPORTED ARCHITECTURE/PLATFORM"
 #endif
 
+#define CRAY_DEBUG 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,8 +35,8 @@ void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//UNFINISHED
 void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 
 //Gets or sets a single bit in an integer
-uint32_t crayon_misc_get_bit(uint32_t number, uint8_t index);
-void crayon_misc_set_bit(uint32_t *number, uint8_t index);
+#define crayon_misc_get_bit(number, index) (number >> index) & 1
+#define crayon_misc_set_bit(number, index) number |= (1 << index)
 
 #if defined(_arch_dreamcast)
 

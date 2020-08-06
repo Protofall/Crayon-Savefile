@@ -197,10 +197,6 @@ void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata);
 //---------------Stuff the user should be calling----------------
 
 
-//Basically get/setting bits from a bitmap
-uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
-inline void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
-
 uint8_t crayon_savefile_set_base_path(char *path);	//On Dreamcast this is always "/vmu/" and it will ignore the param
 
 //Make sure to call this on a new savefile details struct otherwise you can get strange results if

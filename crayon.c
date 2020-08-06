@@ -16,15 +16,6 @@ void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes){
 	return;
 }
 
-uint32_t crayon_misc_get_bit(uint32_t number, uint8_t index){
-	return (number >> index) & 1;
-}
-
-void crayon_misc_set_bit(uint32_t *number, uint8_t index){
-	*number |= (1 << index);
-	return;
-}
-
 #if defined(_arch_dreamcast)
 
 uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint){
