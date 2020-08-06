@@ -34,10 +34,6 @@ void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//UNFINISHED
 
 void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 
-//Gets or sets a single bit in an integer
-#define crayon_misc_get_bit(number, index) (number >> index) & 1
-#define crayon_misc_set_bit(number, index) number |= (1 << index)
-
 #if defined(_arch_dreamcast)
 
 #include <kos/fs_romdisk.h> //For romdisk swapping

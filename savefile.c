@@ -626,7 +626,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_check_device_free_space(save_device_id)){
 				printf("update valid saves: 4\n");
-				crayon_misc_set_bit(details->present_devices, save_device_id);
+				crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
 			}
 		}
 		else{	//File does exist, so it must be invalid if check failed
@@ -642,11 +642,11 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		}
 
 		//Even if we can't use it, we still show it
-		crayon_misc_set_bit(details->present_savefiles, save_device_id);
+		crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 
 		if(details->savefile_versions[save_device_id] == details->latest_version){
-			crayon_misc_set_bit(details->present_devices, save_device_id);
-			crayon_misc_set_bit(details->current_savefiles, save_device_id);
+			crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
+			crayon_savefile_set_device_bit(&details->current_savefiles, save_device_id);
 		}
 		else if(details->savefile_versions[save_device_id] < details->latest_version){
 			fp = fopen(savename, "rb");
@@ -671,7 +671,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_check_device_free_space(save_device_id) + savefile_size){
-				crayon_misc_set_bit(details->present_devices, save_device_id);
+				crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
 			}
 		}
 		//If the version is greater, then we just leave it alone and say the device isn't present
@@ -1117,7 +1117,7 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	uint8_t i;
 	if(details->save_device_id == -1){
 		for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
-			if(crayon_misc_get_bit(details->present_devices, i)){
+			if(crayon_savefile_get_device_bit(details->present_devices, i)){
 				details->save_device_id = i;
 				break;
 			}
@@ -1129,8 +1129,8 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	//Device isn't present or no savefile present, then they'res nothing to load
-	if(!crayon_misc_get_bit(details->present_devices, details->save_device_id) ||
-		!crayon_misc_get_bit(details->present_savefiles, details->save_device_id)){
+	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id) ||
+		!crayon_savefile_get_device_bit(details->present_savefiles, details->save_device_id)){
 		printf("Test1\n");
 		return -1;
 	}
@@ -1215,7 +1215,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 
 int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	//Device isn't present, can't do anything with it
-	if(!crayon_misc_get_bit(details->present_devices, details->save_device_id)){
+	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
 		return -1;
 	}
 
@@ -1337,15 +1337,15 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	#endif
 
 
-	crayon_misc_set_bit(details->present_savefiles, details->save_device_id);
-	crayon_misc_set_bit(details->current_savefiles, details->save_device_id);
+	crayon_savefile_set_device_bit(&details->present_savefiles, details->save_device_id);
+	crayon_savefile_set_device_bit(&details->current_savefiles, details->save_device_id);
 
 	return 0;
 }
 
 uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details){
 	//Device isn't present, can't do anything with it
-	if(!crayon_misc_get_bit(details->present_devices, details->save_device_id)){
+	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
 		return 1;
 	}
 
