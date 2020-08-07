@@ -1,13 +1,12 @@
 #ifndef SAVEFILE_CRAYON_H
 #define SAVEFILE_CRAYON_H
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h> //For the uintX_t types
 
-#ifdef _arch_dreamcast
+#if defined(_arch_dreamcast)
 
 #include <dc/maple/vmu.h>
 #include <dc/vmu_pkg.h>
@@ -102,6 +101,10 @@ enum {
 		char app_id[16];
 	} crayon_savefile_hdr_t;
 
+#else
+
+	#error "UNSUPPORTED ARCH"
+
 #endif
 
 //The struct that contains all of a save file info. This is useful for passing
@@ -194,6 +197,7 @@ void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details);
 void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata);
 
 //Basically get/setting bits from a bitmap
+	//I wish I could make these inlines, but GCC refuses to let me do it :(
 uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
 void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
 
@@ -222,10 +226,14 @@ crayon_savefile_set_string(details, string, CRAY_SF_STRING_SHORT_DESC);
 #define crayon_savefile_set_long_desc(details, string) \
 crayon_savefile_set_string(details, string, CRAY_SF_STRING_LONG_DESC);
 
-#else
+#elif defined(_arch_pc)
 
 #define crayon_savefile_set_short_desc(details, string) 0;
 #define crayon_savefile_set_long_desc(details, string) 0;
+
+#else
+
+	#error "UNSUPPORTED ARCH"
 
 #endif
 

@@ -11,7 +11,7 @@
 	#error "UNSUPPORTED ARCHITECTURE/PLATFORM"
 #endif
 
-#define CRAY_DEBUG 1
+#define CRAYON_DEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>

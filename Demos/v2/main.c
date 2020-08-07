@@ -20,14 +20,14 @@ int main(){
 	#endif
 
 	//Try and load savefile
-	uint8_t load_error = crayon_savefile_load_savedata(&savefile_details);	//If a savefile DNE this fails
+	int8_t load_error = crayon_savefile_load_savedata(&savefile_details);	//If a savefile DNE this fails
 
 	//Change vars here
 	// sf_var1[0] = 2997;
 	// sf_var2[0] += 5.25;
 	// sf_name[2][3] = '1';
 
-	uint8_t save_error = 1;
+	int8_t save_error = 1;
 	if(savefile_details.present_devices){
 		save_error = crayon_savefile_save_savedata(&savefile_details);
 	}

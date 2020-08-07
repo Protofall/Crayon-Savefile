@@ -41,9 +41,13 @@ uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
 	//Get the total number of bytes. Keep in mind we need to think about the icon/s and EC
 	return CRAY_SF_HDR_SIZE + (512 * details->icon_anim_count) + eyecatcher_size + details->savedata.size;
 
-	#else
+	#elif defined(_arch_pc)
 
 	return CRAY_SF_HDR_SIZE + details->savedata.size;
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 
 	#endif
 }
@@ -59,6 +63,10 @@ uint16_t crayon_savefile_detail_string_length(uint8_t string_id){
 		
 			return 21 - 8;	//The 8 is the "/vmu/XX/" and the name itself can only be 13 chars (Last it null terminator)
 		
+			#else
+
+				#error "UNSUPPORTED ARCH"
+
 			#endif
 		case CRAY_SF_STRING_APP_ID:
 			return 16;
@@ -321,10 +329,14 @@ uint32_t crayon_savefile_check_device_free_space(int8_t device_id){
 
 	return vmufs_free_blocks(vmu) * 512;
 	
-	#else
+	#elif defined(_arch_pc)
 
 	//Yeah, idk how to get system's remaining space size in C without exec/system
 	return INT32_MAX;
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 	
 	#endif
 }
@@ -343,6 +355,10 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 	#elif defined(_arch_pc)
 
 	uint32_t length = __savefile_path_length + strlen(details->strings[CRAY_SF_STRING_FILENAME]) + 1;
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 
 	#endif
 
@@ -377,7 +393,7 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 
 //NOTE: You should never need to access these variables directly. I'm only doing so for debugging purposes
 void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata){
-	#if defined(_arch_pc)
+	#if CRAYON_DEBUG == 1
 
 	uint32_t i;
 	printf("(START)\n\n");
@@ -545,7 +561,7 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	//Check to confirm the savefile version is not newer than it should be
 	crayon_misc_encode_to_buffer((uint8_t*)&sf_version, (uint8_t*)pkg.data, sizeof(crayon_savefile_version_t));
 
-	#else
+	#elif defined(_arch_pc)
 
 	crayon_savefile_hdr_t hdr;
 
@@ -566,6 +582,10 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	}
 
 	// printf("read version %d. our version %d\n", sf_version, details->version);
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 
 	#endif
 
@@ -756,7 +776,7 @@ uint8_t crayon_savefile_set_base_path(char *path){
 		free(__savefile_path);
 	}
 
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 
 	(void)path;
 
@@ -768,7 +788,7 @@ uint8_t crayon_savefile_set_base_path(char *path){
 
 	strcpy(__savefile_path, "/vmu/");
 
-	#else
+	#elif defined(_arch_pc)
 
 	uint16_t length = strlen(path);
 
@@ -777,6 +797,10 @@ uint8_t crayon_savefile_set_base_path(char *path){
 	}
 
 	strcpy(__savefile_path, path);
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 
 	#endif
 
@@ -809,11 +833,15 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 	}
 	details->savedata.size = 0;
 
+	//Will be set later
+	details->present_devices = 0;
+	details->present_savefiles = 0;
+	details->current_savefiles = 0;
 	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES; i++){
-		details->savefile_versions[i] = 0;	//This will be updated by the check_savedata function
+		details->savefile_versions[i] = 0;
 	}
 
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 
 	details->icon_data = NULL;
 	details->icon_palette = NULL;
@@ -991,7 +1019,11 @@ uint32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *
 	var->version_added = version_added;
 	var->version_removed = version_removed;
 
-	details->savedata.lengths[var->data_type] += var->data_length;
+	//We only extend the length if the variable still exists
+	if(version_removed > details->latest_version){
+		details->savedata.lengths[var->data_type] += var->data_length;
+		var->data_ptr.t_double = NULL;
+	}
 
 	//Store the pointer's address so we can change it later
 	switch(var->data_type){
@@ -1069,6 +1101,12 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	crayon_savefile_history_t *var = details->history;
 	while(var){
+		#if CRAYON_DEBUG == 1
+
+		printf("ID: %03d. INFO: %d %d.\n", var->id, var->version_removed, details->latest_version);
+
+		#endif
+
 		if(var->version_removed > details->latest_version){	//We only give space to vars that still exist
 			switch(var->data_type){
 				case CRAY_TYPE_DOUBLE:
@@ -1132,6 +1170,24 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 		}
 	}
 
+	#if CRAYON_DEBUG == 1
+
+	printf("\n---SOLIDIFY'S ENDING STATS---\n");
+	printf("SF Size: HDR %d BODY %d\n", CRAY_SF_HDR_SIZE, details->savedata.size);
+	printf("Version size: %d. Savedata lengths: %d, %d, %d, %d, %d, %d, %d, %d, %d\n", sizeof(crayon_savefile_version_t),
+		details->savedata.lengths[0], details->savedata.lengths[1], details->savedata.lengths[2],
+		details->savedata.lengths[3], details->savedata.lengths[4], details->savedata.lengths[5],
+		details->savedata.lengths[6], details->savedata.lengths[7], details->savedata.lengths[8]);
+	printf("Bitmaps: %d, %d, %d\n", details->present_devices, details->present_savefiles, details->current_savefiles);
+
+	printf("Versions: ");
+	for(i = 0; i < CRAY_SF_NUM_SAVE_DEVICES - 1; i++){
+		printf("%d, ", details->savefile_versions[i]);
+	}
+	printf("%d\n---END---\n\n", details->savefile_versions[CRAY_SF_NUM_SAVE_DEVICES - 1]);
+
+	#endif
+
 	return 0;
 }
 
@@ -1187,7 +1243,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	//Read the pkg data into my struct
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, (uint8_t *)pkg.data, (uint32_t)pkg.data_len);
 
-	#else
+	#elif defined(_arch_pc)
 
 	//Call the endian function on "data"
 	;
@@ -1210,6 +1266,10 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	//We use CRAY_SF_HDR_SIZE to skip the header
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, data + CRAY_SF_HDR_SIZE,
 		pkg_size - CRAY_SF_HDR_SIZE);
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 
 	#endif
 
@@ -1234,6 +1294,8 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 
 	FILE *fp;
 
+	#if defined(_arch_dreamcast)
+
 	uint8_t *data = malloc(details->savedata.size);
 	if(!data){
 		free(savename);
@@ -1241,8 +1303,6 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	}
 
 	crayon_savefile_serialise(details, data);
-
-	#if defined(_arch_dreamcast)
 
 	vmu_pkg_t pkg;
 	strncpy(pkg.desc_long, details->strings[CRAY_SF_STRING_LONG_DESC], 32);
@@ -1297,6 +1357,25 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 
 	#elif defined(_arch_pc)
 
+	uint8_t *data = malloc(CRAY_SF_HDR_SIZE + details->savedata.size);
+	if(!data){
+		free(savename);
+		return -1;
+	}
+
+	crayon_savefile_serialise(details, data + CRAY_SF_HDR_SIZE);
+
+	strncpy((char*)data, "CRAYON SAVEFILE", sizeof(((crayon_savefile_hdr_t*) 0)->name));
+	uint16_t offset = sizeof(((crayon_savefile_hdr_t*) 0)->name);
+
+	uint8_t i;
+	uint8_t str_length;
+	for(i = CRAY_SF_STRING_APP_ID; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
+		str_length = crayon_savefile_detail_string_length(i);
+		strncpy((char*)data + offset, details->strings[i], str_length);
+		offset += str_length;
+	}
+
 	//Endian-ify the data block (PC only)
 	;
 
@@ -1307,43 +1386,69 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 		return -1;
 	}
 
-	char string_buffer[32] = {0};
-	strncpy(string_buffer, "CRAYON SAVEFILE", sizeof(((crayon_savefile_hdr_t*) 0)->name));
-	uint8_t write_res = (fwrite(string_buffer, sizeof(char), sizeof(((crayon_savefile_hdr_t*) 0)->name), fp) !=
-		sizeof(((crayon_savefile_hdr_t*) 0)->name));
-
-	if(write_res){
-		free(data);
-		fclose(fp);
-		return -1;
-	}
-
-	uint8_t i;
-	uint8_t str_length;
-	for(i = CRAY_SF_STRING_APP_ID; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
-		str_length = crayon_savefile_detail_string_length(i);
-		strncpy(string_buffer, details->strings[i], str_length);
-		write_res = (fwrite(string_buffer, sizeof(char), str_length, fp) != str_length);
-		if(write_res){
-			free(data);
-			fclose(fp);
-			return -1;
-		}
-	}
-
-	write_res = (fwrite(data, sizeof(uint8_t), details->savedata.size, fp) != details->savedata.size);
+	uint32_t size = details->savedata.size + CRAY_SF_HDR_SIZE;
+	uint8_t write_res = (fwrite(data, sizeof(uint8_t), size, fp) != size);
 	free(data);
 	fclose(fp);
 	if(write_res){
 		return -1;
 	}
 
+
+	//THERE'S AN ISSUE WITH THE WRITING HERE
+	;
+	;
+	;
+	;
+	;
+
+
+
+	
+
+	// fp = fopen(savename, "wb");
+	// free(savename);
+	// if(!fp){
+	// 	free(data);
+	// 	return -1;
+	// }
+
+	// char string_buffer[32] = {0};
+	// strncpy(string_buffer, "CRAYON SAVEFILE", sizeof(((crayon_savefile_hdr_t*) 0)->name));
+	// uint8_t write_res = (fwrite(string_buffer, sizeof(char), sizeof(((crayon_savefile_hdr_t*) 0)->name), fp) !=
+	// 	sizeof(((crayon_savefile_hdr_t*) 0)->name));
+
+	// if(write_res){
+	// 	free(data);
+	// 	fclose(fp);
+	// 	return -1;
+	// }
+
+	// uint8_t i;
+	// uint8_t str_length;
+	// for(i = CRAY_SF_STRING_APP_ID; i < CRAY_SF_NUM_DETAIL_STRINGS; i++){
+	// 	str_length = crayon_savefile_detail_string_length(i);
+	// 	strncpy(string_buffer, details->strings[i], str_length);
+	// 	write_res = (fwrite(string_buffer, sizeof(char), str_length, fp) != str_length);
+	// 	if(write_res){
+	// 		free(data);
+	// 		fclose(fp);
+	// 		return -1;
+	// 	}
+	// }
+
+	// write_res = (fwrite(data, sizeof(uint8_t), details->savedata.size, fp) != details->savedata.size);
+	// free(data);
+	// fclose(fp);
+	// if(write_res){
+	// 	return -1;
+	// }
+
 	#else
 
 		#error "UNSUPPORTED ARCH"
 	
 	#endif
-
 
 	crayon_savefile_set_device_bit(&details->present_savefiles, details->save_device_id);
 	crayon_savefile_set_device_bit(&details->current_savefiles, details->save_device_id);
@@ -1374,6 +1479,10 @@ uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details){
 	#elif defined (_arch_pc)
 
 	;
+
+	#else
+
+		#error "UNSUPPORTED ARCH"
 
 	#endif
 

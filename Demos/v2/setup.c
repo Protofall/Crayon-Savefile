@@ -3,17 +3,21 @@
 //NOTE: This function contains the default values only for the current version
 //Thats why we can reference the variables directly like this
 void savefile_defaults(){
-	sf_var1[0] = 300;
+	// sf_old_coins[0] = 300;
+	if(sf_var2 == NULL){
+		printf("Its NULL?\n");
+	}
 	sf_var2[0] = 5.5;
-	sf_var3[0] = 27;
+	// sf_dunno[0] = 27;
 
-	uint16_t i, j;
+	uint16_t i;
+	// uint16_t j;
 	for(i = 0; i < sf_var4_length; i++){
 		sf_lol[i][0] = 2;
 
-		for(j = 0; j < sf_hi_length; j++){
-			sf_hi[i][j] = -1;
-		}
+		// for(j = 0; j < sf_hi_length; j++){
+		// 	sf_hi[i][j] = -1;
+		// }
 
 		//I use strncpy instead of strcpy so we know the value
 		//of all characters in the buffer
@@ -26,8 +30,12 @@ void savefile_defaults(){
 		sf_speedrun_times[i] = -1;
 	}
 
+	sf_coins[0] = 300;
+
 	return;
 }
+
+uint32_t remove_indexes[sf_var4_length + 1];
 
 //In this function, we don't handle the variables directly like normal, since some of
 //them don't exist anymore. So instead we refer to them by their history IDs like so
@@ -42,14 +50,32 @@ int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded
 	//We also assume the user's var IDs are globally accessable or they manually used them here as magic numbers
 	;
 
-	// double *ptr_double = loaded_variables[index];
-	// user_ptr[i] = ptr_double[i];
+	uint16_t i, j;
+	int32_t *s32_ptr;
+	uint16_t *u16_ptr;
+
+	//We want to keep the values from hi in a new form and we don't care about "dunno"s value
+	if(loaded_version < SFV_MISTAKES_MADE){
+		for(i = 0; i < sf_var4_length; i++){
+			s32_ptr = loaded_variables[remove_indexes[i + 1]];
+			// if(!s32_ptr){continue;}	//Only needed if we didn't have the above if check
+			for(j = 0; j < sf_hi_length; j++){
+				sf_lol[i][0] += !(s32_ptr[j] % 2);	//If it was even, add one to lol
+			}
+		}
+
+		u16_ptr = loaded_variables[remove_indexes[0]];
+		// if(!u16_ptr){break;}
+		sf_coins[0] = u16_ptr[0];
+	}
 
 
 	return 0;
 }
 
 uint8_t setup_savefile(crayon_savefile_details_t * details){
+	sf_var2 = NULL;
+	
 	uint8_t i, error;
 
 	#ifdef _arch_pc
@@ -93,19 +119,25 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	#endif
 
 	//Now lets construct our history
-	crayon_savefile_add_variable(details, &sf_var1, sf_var1_type, sf_var1_length, SFV_INITIAL, VAR_STILL_PRESENT);
+	remove_indexes[0] = crayon_savefile_add_variable(details, NULL, sf_old_coins_type, sf_old_coins_length,
+		SFV_INITIAL, SFV_MISTAKES_MADE);
 	crayon_savefile_add_variable(details, &sf_var2, sf_var2_type, sf_var2_length, SFV_INITIAL, VAR_STILL_PRESENT);
-	crayon_savefile_add_variable(details, &sf_var3, sf_var3_type, sf_var3_length, SFV_INITIAL, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, NULL, sf_dunno_type, sf_dunno_length, SFV_INITIAL, SFV_MISTAKES_MADE);
 	for(i = 0; i < sf_var4_length; i++){
 		crayon_savefile_add_variable(details, &sf_lol[i], sf_lol_type, sf_lol_length, SFV_INITIAL, VAR_STILL_PRESENT);
-		crayon_savefile_add_variable(details, &sf_hi[i], sf_hi_type, sf_hi_length, SFV_INITIAL, VAR_STILL_PRESENT);
+		remove_indexes[i + 1] = crayon_savefile_add_variable(details, NULL, sf_hi_type, sf_hi_length, SFV_INITIAL,
+			SFV_MISTAKES_MADE);
 		crayon_savefile_add_variable(details, &sf_name[i], sf_name_type, sf_name_length, SFV_INITIAL, VAR_STILL_PRESENT);
 	}
 
+
 	crayon_savefile_add_variable(details, &sf_myspace, sf_myspace_type, sf_myspace_length,
 		SFV_SPEEDRUNNER, VAR_STILL_PRESENT);
-	crayon_savefile_add_variable(details, &sf_speedrun_times, sf_speedrun_times_type, sf_speedrun_times_length,
-		SFV_SPEEDRUNNER, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_speedrun_times, sf_speedrun_times_type,
+		sf_speedrun_times_length, SFV_SPEEDRUNNER, VAR_STILL_PRESENT);
+
+	crayon_savefile_add_variable(details, &sf_coins, sf_coins_type,
+		sf_coins_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
 
 	//Set the savefile
 	if(crayon_savefile_solidify(details)){return 1;}
@@ -114,9 +146,9 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	// 	printf("Lengths %d\n", details->savedata.lengths[i]);
 	// }
 
-	// if(!sf_var1){printf("Still NULL\n");}
+	// if(!sf_old_coins){printf("Still NULL\n");}
 
-	// if(details->history->data_ptr.u16 != &sf_var1){
+	// if(details->history->data_ptr.u16 != &sf_old_coins){
 	// 	printf("Its not pointing to the right place\n");
 	// }
 	// else{
