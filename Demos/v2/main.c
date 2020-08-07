@@ -77,7 +77,7 @@ int main(){
 
 	char buffer[70];
 	if(!setup_res){
-		sprintf(buffer, "Save initialised\nUses %d bytes", CRAY_SF_HDR_SIZE + savefile_details.savedata.size);
+		sprintf(buffer, "Save initialised\nUses %d bytes", CRAYON_SF_HDR_SIZE + savefile_details.savedata.size);
 	}
 	else{
 		sprintf(buffer, "It failed with code %d", setup_res);
@@ -86,7 +86,7 @@ int main(){
 	char buffer2[32];
 	char buffer3[32];
 	sprintf(buffer2, "save_error: %d. load_error %d\n", save_error, load_error);
-	sprintf(buffer3, "bitmaps: %d. %d .%d\n", savefile_details.present_devices,
+	sprintf(buffer3, "bitmaps: %d, %d, %d\n", savefile_details.present_devices,
 		savefile_details.present_savefiles, savefile_details.current_savefiles);
 	draw_string(0, 0, 0, 0, 0, 0, 0, buffer, 0, 0);
 	draw_string(0, 0, 0, 0, 0, 0, 0, buffer2, 0, 0);

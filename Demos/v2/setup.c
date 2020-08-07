@@ -74,8 +74,6 @@ int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded
 }
 
 uint8_t setup_savefile(crayon_savefile_details_t * details){
-	sf_var2 = NULL;
-	
 	uint8_t i, error;
 
 	#ifdef _arch_pc
@@ -142,7 +140,7 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	//Set the savefile
 	if(crayon_savefile_solidify(details)){return 1;}
 
-	// for(i = 0; i < CRAY_NUM_TYPES; i++){
+	// for(i = 0; i < CRAYON_NUM_TYPES; i++){
 	// 	printf("Lengths %d\n", details->savedata.lengths[i]);
 	// }
 

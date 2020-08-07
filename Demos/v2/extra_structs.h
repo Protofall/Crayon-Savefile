@@ -33,47 +33,47 @@ typedef struct my_savefile_var{
 //v0 VARS
 
 // uint16_t *sf_old_coins;
-#define sf_old_coins_type CRAY_TYPE_UINT16
+#define sf_old_coins_type CRAYON_TYPE_UINT16
 #define sf_old_coins_length 1	//If you want, these length defines could be unsigned int consts.
 
 float *sf_var2;
-#define sf_var2_type CRAY_TYPE_FLOAT
+#define sf_var2_type CRAYON_TYPE_FLOAT
 #define sf_var2_length 1
 
 // uint8_t *sf_dunno;
-#define sf_dunno_type CRAY_TYPE_UINT8
+#define sf_dunno_type CRAYON_TYPE_UINT8
 #define sf_dunno_length 1
 
 //Now the "other_struct"
 #define sf_var4_length 10
 
 uint8_t *sf_lol[sf_var4_length];
-#define sf_lol_type CRAY_TYPE_UINT8
+#define sf_lol_type CRAYON_TYPE_UINT8
 #define sf_lol_length 1
 
 // int32_t *sf_hi[sf_var4_length];
-#define sf_hi_type CRAY_TYPE_SINT32
+#define sf_hi_type CRAYON_TYPE_SINT32
 #define sf_hi_length 2
 
 char *sf_name[sf_var4_length];	// "sf_var4_length" strings with 16 chars each
-#define sf_name_type CRAY_TYPE_CHAR
+#define sf_name_type CRAYON_TYPE_CHAR
 #define sf_name_length 16
 
 
 //v1 VARS
 
 uint8_t *sf_myspace;
-#define sf_myspace_type CRAY_TYPE_UINT8
+#define sf_myspace_type CRAYON_TYPE_UINT8
 #define sf_myspace_length 1
 
 double *sf_speedrun_times;
-#define sf_speedrun_times_type CRAY_TYPE_DOUBLE
+#define sf_speedrun_times_type CRAYON_TYPE_DOUBLE
 #define sf_speedrun_times_length 2
 
 //v2 vars
 
 uint32_t *sf_coins;
-#define sf_coins_type CRAY_TYPE_UINT32
+#define sf_coins_type CRAYON_TYPE_UINT32
 #define sf_coins_length 1	//If you want, these length defines could be unsigned int consts.
 
 

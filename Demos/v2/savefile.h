@@ -18,16 +18,16 @@
 
 //Var types the user passes into functions
 enum {
-	CRAY_TYPE_DOUBLE = 0,
-	CRAY_TYPE_FLOAT,
-	CRAY_TYPE_UINT32,
-	CRAY_TYPE_SINT32,
-	CRAY_TYPE_UINT16,
-	CRAY_TYPE_SINT16,
-	CRAY_TYPE_UINT8,
-	CRAY_TYPE_SINT8,
-	CRAY_TYPE_CHAR,
-	CRAY_NUM_TYPES	//This will be the number of types we have available
+	CRAYON_TYPE_DOUBLE = 0,
+	CRAYON_TYPE_FLOAT,
+	CRAYON_TYPE_UINT32,
+	CRAYON_TYPE_SINT32,
+	CRAYON_TYPE_UINT16,
+	CRAYON_TYPE_SINT16,
+	CRAYON_TYPE_UINT8,
+	CRAYON_TYPE_SINT8,
+	CRAYON_TYPE_CHAR,
+	CRAYON_NUM_TYPES	//This will be the number of types we have available
 };
 
 //This is never accessed directly by the user, but it will contain all of you variables that will get saved
@@ -42,7 +42,7 @@ typedef struct crayon_savefile_data{
 	int8_t *s8;
 	char *chars;
 
-	uint32_t lengths[CRAY_NUM_TYPES];	//The lengths are in the order they appear above
+	uint32_t lengths[CRAYON_NUM_TYPES];	//The lengths are in the order they appear above
 	uint32_t size;
 } crayon_savefile_data_t;
 
@@ -76,25 +76,25 @@ typedef struct crayon_savefile_history{
 
 //Only Dreamcast has the descriptions
 enum {
-	CRAY_SF_STRING_FILENAME = 0,
-	CRAY_SF_STRING_APP_ID,
+	CRAYON_SF_STRING_FILENAME = 0,
+	CRAYON_SF_STRING_APP_ID,
 	#if defined( _arch_dreamcast)
-	CRAY_SF_STRING_SHORT_DESC,
-	CRAY_SF_STRING_LONG_DESC,
+	CRAYON_SF_STRING_SHORT_DESC,
+	CRAYON_SF_STRING_LONG_DESC,
 	#endif
-	CRAY_SF_NUM_DETAIL_STRINGS	// 4 on Dreamcast, 2 on PC
+	CRAYON_SF_NUM_DETAIL_STRINGS	// 4 on Dreamcast, 2 on PC
 };
 
 #if defined( _arch_dreamcast)
 
-	#define CRAY_SF_NUM_SAVE_DEVICES 8
-	#define CRAY_SF_HDR_SIZE sizeof(vmu_hdr_t)
+	#define CRAYON_SF_NUM_SAVE_DEVICES 8
+	#define CRAYON_SF_HDR_SIZE sizeof(vmu_hdr_t)
 
 #elif defined(_arch_pc)
 
-	#define CRAY_SF_NUM_SAVE_DEVICES 1
+	#define CRAYON_SF_NUM_SAVE_DEVICES 1
 
-	#define CRAY_SF_HDR_SIZE (16 + 16)	//Must be a multiple of 4 bytes long
+	#define CRAYON_SF_HDR_SIZE (16 + 16)	//Must be a multiple of 4 bytes long
 	typedef struct crayon_savefile_hdr{
 		char name[16];	//Not actually used, but useful if you read a savefile with a hex editor
 						//It should always be set to "CRAYON SAVEFILE" with a null terminator at the end
@@ -118,14 +118,14 @@ typedef struct crayon_savefile_details{
 	crayon_savefile_data_t savedata;
 
 	//All the strings we have. Different systems might have a different number of strings
-	char *strings[CRAY_SF_NUM_DETAIL_STRINGS];
+	char *strings[CRAYON_SF_NUM_DETAIL_STRINGS];
 
 	//The following 3 variables are bitmaps
 	uint8_t present_devices;	//Shows any device thats present that has enough space to save too
 								//(Unless there's a savefile newer than latest present)
 	uint8_t present_savefiles;	//Shows any device with any savefile from any version
 	uint8_t current_savefiles;	//Only shows savefiles in the current version
-	crayon_savefile_version_t savefile_versions[CRAY_SF_NUM_SAVE_DEVICES];	//Stores the versions of savefiles detected
+	crayon_savefile_version_t savefile_versions[CRAYON_SF_NUM_SAVE_DEVICES];	//Stores the versions of savefiles detected
 
 	//This tells us what storage device we save to
 	//On Dreamcast this corresponds to one of the 8 memory cards (slots 1 or 2, ports 0 to 3)
@@ -217,14 +217,14 @@ uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details
 	int8_t (*update_savefile_func)(void**, crayon_savefile_version_t, crayon_savefile_version_t));
 
 #define crayon_savefile_set_app_id(details, string) \
-crayon_savefile_set_string(details, string, CRAY_SF_STRING_APP_ID);
+crayon_savefile_set_string(details, string, CRAYON_SF_STRING_APP_ID);
 
 #if defined(_arch_dreamcast)
 
 #define crayon_savefile_set_short_desc(details, string) \
-crayon_savefile_set_string(details, string, CRAY_SF_STRING_SHORT_DESC);
+crayon_savefile_set_string(details, string, CRAYON_SF_STRING_SHORT_DESC);
 #define crayon_savefile_set_long_desc(details, string) \
-crayon_savefile_set_string(details, string, CRAY_SF_STRING_LONG_DESC);
+crayon_savefile_set_string(details, string, CRAYON_SF_STRING_LONG_DESC);
 
 #elif defined(_arch_pc)
 
