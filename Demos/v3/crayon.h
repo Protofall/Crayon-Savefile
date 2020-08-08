@@ -11,7 +11,13 @@
 	#error "UNSUPPORTED ARCHITECTURE/PLATFORM"
 #endif
 
-#define CRAYON_DEBUG 1
+#define CRAYON_DEBUG 1	//REMOVE THIS LINE LATER
+
+#ifndef CRAYON_DEBUG
+
+#define CRAYON_DEBUG 0
+
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +36,7 @@
 //Checks if the computer running this code is big endian or not
 uint8_t crayon_misc_is_big_endian();
 
-void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//UNFINISHED
+void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//UNFINISHED. WIP
 
 void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 
@@ -54,7 +60,7 @@ uint8_t crayon_peripheral_dreamcast_get_screens();
 
 void crayon_peripheral_vmu_display_icon(uint8_t vmu_bitmap, void *icon);
 
-//0 if the peripheral doesn't have the function
+//0 if the peripheral doesn't have the function, 1 if it does
 //Kind of a Dreamcast-specific function, but for later console ports this might be reusable
 uint8_t crayon_peripheral_has_function(uint32_t function, int8_t save_device_id);
 

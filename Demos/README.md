@@ -1,6 +1,6 @@
 # Version differences
 
-Here we have a copy of the savefile program for each version of our savefile.
+Here we have a copy of the savefile program for each version of our savefile. Do note for sizes, KOS currently treats doubles the same as floats, so doubles are actually 4 bytes each. The size of the header on PC is 32 bytes and its `X` bytes on Dreamcast. 512 bytes on Dreamcast is 1 Block.
 
 ### v1
 
@@ -22,6 +22,10 @@ Note that `var4` doesn't exist in the normal sense, think of it as a struct that
 - 11 unsigned 8-bit numbers
 - 160 chars
 
+Sizes:
+- Dreamcast: -
+- PC: 293 Bytes
+
 ### v2
 
 This version adds the following variables
@@ -41,6 +45,10 @@ So now our total vars are
 - 12 unsigned 8-bit numbers
 - 160 chars
 
+Sizes:
+- Dreamcast: -
+- PC: 822 Bytes
+
 ### v3
 
 A few variables are removed, and one variable is added. We forget the value of `myspace`, use the values from `hi` as a part of `lol` and the old `coins` is now stored in our new coins variable so we can store more coins (Former was `uint16_t`, latter is `uint32_t`). `garbage` is removed. It took 512 bytes which is 1 Block exactly on Dreamcast so now the savefile will be a block smaller.
@@ -58,17 +66,6 @@ Total vars
 - 1 signed 8-bit number
 - 160 chars
 
-### v4
-
-We just add a new char called `sf_fave_letter`. Nothing special
-
-Total vars
-- 2 doubles
-- 2 float
-- 1 unsigned 32-bit number
-- 1 signed 32-bit number
-- 1 unsigned 16-bit number
-- 1 signed 16-bit number
-- 11 unsigned 8-bit numbers
-- 1 signed 8-bit number
-- 161 chars
+Sizes:
+- Dreamcast: -
+- PC: 244 Bytes

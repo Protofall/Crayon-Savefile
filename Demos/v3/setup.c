@@ -51,7 +51,7 @@ uint32_t remove_indexes[sf_var4_length + 1];
 
 //THIS IS USED BY THE CRAYON SAVEFILE DESERIALISER WHEN LOADING A SAVE FROM AN OLDER VERSION
 //THERE IS NO NEED TO CALL THIS MANUALLY
-int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded_version,
+int8_t upgrade_savefile(void **loaded_variables, crayon_savefile_version_t loaded_version,
 	crayon_savefile_version_t latest_version){
 
 	uint16_t i, j;
@@ -80,7 +80,7 @@ int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded
 uint8_t setup_savefile(crayon_savefile_details_t * details){
 	uint8_t i, error;
 
-	#ifdef _arch_pc
+	#if defined(_arch_pc)
 
 	crayon_savefile_set_base_path("saves/");
 
@@ -92,7 +92,7 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	#endif
 
 	error = crayon_savefile_init_savefile_details(details, "SAVE_DEMO3.s", SFV_CURRENT,
-		savefile_defaults, update_savefile);
+		savefile_defaults, upgrade_savefile);
 	if(error){return 1;}
 	error += crayon_savefile_set_app_id(details, "ProtoSaveDemo3");
 	error += crayon_savefile_set_short_desc(details, "Save Demo");
@@ -161,19 +161,6 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 
 	//Set the savefile
 	if(crayon_savefile_solidify(details)){return 1;}
-
-	// for(i = 0; i < CRAYON_NUM_TYPES; i++){
-	// 	printf("Lengths %d\n", details->savedata.lengths[i]);
-	// }
-
-	// if(!sf_old_coins){printf("Still NULL\n");}
-
-	// if(details->history->data_ptr.u16 != &sf_old_coins){
-	// 	printf("Its not pointing to the right place\n");
-	// }
-	// else{
-	// 	printf("It should be fine\n");
-	// }
 
 	return 0;
 }

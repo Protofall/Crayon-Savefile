@@ -4,31 +4,8 @@
 #include "savefile.h"
 
 
-//FYI the savefile should be 2 blocks long
+//WARNING. Don't manually modify the pointers. Crayon savefile functions will set them itself
 
-//The commented code below is what your savefile would have looked like in the old system
-
-/*
-typedef struct other_struct{
-	uint8_t lol;
-	int32_t hi[2];
-	char name[16];
-} other_struct_t;
-
-typedef struct my_savefile_var{
-	uint16_t coins;
-	float var2;
-	uint8_t dunno;
-	other_struct_t var4[10];
-	uint8_t myspace;
-	double speedrun_times[2];
-} my_savefile_var_t;
-*/
-
-//Here's how we represent it now
-	//WARNING. Don't manually modified the pointers. Crayon savefile functions will set them itself
-	//NOTE: static const vars will have a copy in each object file. If you want to only have one copy
-		//just remove the static const and set each var's value in setup_savefile()
 
 //v1 VARS
 
@@ -107,12 +84,14 @@ enum savefile_version{
 	SFV_INITIAL = 1,
 	SFV_SPEEDRUNNER,
 	SFV_MISTAKES_MADE,
+	//
 	//Add new versions here
+	//
 	SFV_LATEST_PLUS_ONE	//DON'T REMOVE
 };
 
 #define VAR_STILL_PRESENT SFV_LATEST_PLUS_ONE
 
-static const crayon_savefile_version_t SFV_CURRENT = SFV_LATEST_PLUS_ONE - 1;
+#define SFV_CURRENT (SFV_LATEST_PLUS_ONE - 1)
 
 #endif

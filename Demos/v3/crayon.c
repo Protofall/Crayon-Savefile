@@ -6,7 +6,12 @@ uint8_t crayon_misc_is_big_endian(){
 }
 
 void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes){
+	#if CRAYON_DEBUG == 1
+	
 	printf("ENDIANESS CORRECTOR INCOMPLETE\n");
+	
+	#endif
+
 	return;
 }
 
@@ -57,9 +62,8 @@ uint8_t crayon_peripheral_dreamcast_get_screens(){
 
 	int i;
 	for(i = 0; i < 8; i++){	//8 because we can have 8 VMUs max
-		//Check if device contains this function bitmap (Returns 0 on success)
-		if(!crayon_peripheral_has_function(MAPLE_FUNC_LCD, i)){
-			// crayon_savefile_set_device_bit(&screens, i);
+		//Check if device contains this function bitmap
+		if(crayon_peripheral_has_function(MAPLE_FUNC_LCD, i)){
 			screens |= (1 << i);
 		}
 		
@@ -95,8 +99,6 @@ void crayon_peripheral_vmu_display_icon(uint8_t vmu_bitmap, void *icon){
 	return;
 }
 
-
-
 //Returns true if device has certain function/s
 uint8_t crayon_peripheral_has_function(uint32_t function, int8_t save_device_id){
 	#if defined(_arch_dreamcast)
@@ -107,20 +109,20 @@ uint8_t crayon_peripheral_has_function(uint32_t function, int8_t save_device_id)
 
 	//Invalid controller/port
 	if(port_and_slot.x < 0){
-		return 1;
+		return 0;
 	}
 
 	//Make sure there's a device in the port/slot
 	if(!(vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y))){
-		return 1;
+		return 0;
 	}
 
 	//Check the device is valid and it has a certain function
 	if(!vmu->valid || !(vmu->info.functions & function)){
-		return 1;
+		return 0;
 	}
 
 	#endif
 
-	return 0;
+	return 1;
 }
