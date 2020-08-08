@@ -96,7 +96,7 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	if(error){return 1;}
 	error += crayon_savefile_set_app_id(details, "ProtoSaveDemo3");
 	error += crayon_savefile_set_short_desc(details, "Save Demo 3");
-	error += crayon_savefile_set_long_desc(details, "Crayon's VMU demo");
+	error += crayon_savefile_set_long_desc(details, "Crayon's Savefile demo");
 	if(error){return 1;}
 
 	#if defined(_arch_dreamcast)
