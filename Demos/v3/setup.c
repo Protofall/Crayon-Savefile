@@ -95,7 +95,7 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 		savefile_defaults, upgrade_savefile);
 	if(error){return 1;}
 	error += crayon_savefile_set_app_id(details, "ProtoSaveDemo3");
-	error += crayon_savefile_set_short_desc(details, "Save Demo");
+	error += crayon_savefile_set_short_desc(details, "Save Demo 2");
 	error += crayon_savefile_set_long_desc(details, "Crayon's VMU demo");
 	if(error){return 1;}
 
