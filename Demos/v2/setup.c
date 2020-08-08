@@ -4,9 +4,6 @@
 //Thats why we can reference the variables directly like this
 void savefile_defaults(){
 	// sf_old_coins[0] = 300;
-	if(sf_var2 == NULL){
-		printf("Its NULL?\n");
-	}
 	sf_var2[0] = 5.5;
 	// sf_dunno[0] = 27;
 
@@ -30,25 +27,32 @@ void savefile_defaults(){
 		sf_speedrun_times[i] = -1;
 	}
 
+	// for(i = 0; i < sf_garbage_length; i++){
+	// 	sf_garbage[i] = 0;
+	// }
+
 	sf_coins[0] = 300;
+
+	sf_rand_var_1[0] = 0;
+	sf_rand_var_2[0] = 0;
+	sf_rand_var_3[0] = 0;
+	sf_rand_var_4[0] = 0;
+	sf_rand_var_5[0] = 0;
 
 	return;
 }
 
 uint32_t remove_indexes[sf_var4_length + 1];
 
-//In this function, we don't handle the variables directly like normal, since some of
-//them don't exist anymore. So instead we refer to them by their history IDs like so
+//This function is designed to handle variables that don't exist anymore in the latest version
+//"loaded_variables" is an array of pointers  to where the loaded variables are stored. Note the array
+//length is the number of all variables ever, so access the right element with the ID values.
+//Variables that still exist in the current version are already handled
 
 //THIS IS USED BY THE CRAYON SAVEFILE DESERIALISER WHEN LOADING A SAVE FROM AN OLDER VERSION
 //THERE IS NO NEED TO CALL THIS MANUALLY
 int8_t update_savefile(void **loaded_variables, crayon_savefile_version_t loaded_version,
 	crayon_savefile_version_t latest_version){
-	
-	//NOTE: We only need to handle vars that no longer exist
-	//We assume that the user's variable are global so thats why they don't have the latest savedata struct present
-	//We also assume the user's var IDs are globally accessable or they manually used them here as magic numbers
-	;
 
 	uint16_t i, j;
 	int32_t *s32_ptr;
@@ -116,6 +120,8 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 
 	#endif
 
+	//v1 vars
+
 	//Now lets construct our history
 	remove_indexes[0] = crayon_savefile_add_variable(details, NULL, sf_old_coins_type, sf_old_coins_length,
 		SFV_INITIAL, SFV_MISTAKES_MADE);
@@ -128,14 +134,30 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 		crayon_savefile_add_variable(details, &sf_name[i], sf_name_type, sf_name_length, SFV_INITIAL, VAR_STILL_PRESENT);
 	}
 
+	//v2 vars
 
-	crayon_savefile_add_variable(details, &sf_myspace, sf_myspace_type, sf_myspace_length,
+	crayon_savefile_add_variable(details, &sf_myspace, sf_myspace_type, sf_myspace_length, SFV_SPEEDRUNNER,
+		VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_speedrun_times, sf_speedrun_times_type, sf_speedrun_times_length,
 		SFV_SPEEDRUNNER, VAR_STILL_PRESENT);
-	crayon_savefile_add_variable(details, &sf_speedrun_times, sf_speedrun_times_type,
-		sf_speedrun_times_length, SFV_SPEEDRUNNER, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, NULL, sf_garbage_type, sf_garbage_length, SFV_SPEEDRUNNER,
+		SFV_MISTAKES_MADE);
+
+
+	//v3 vars
 
 	crayon_savefile_add_variable(details, &sf_coins, sf_coins_type,
 		sf_coins_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_rand_var_1, sf_rand_var_1_type,
+		sf_rand_var_1_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_rand_var_2, sf_rand_var_2_type,
+		sf_rand_var_2_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_rand_var_3, sf_rand_var_3_type,
+		sf_rand_var_3_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_rand_var_4, sf_rand_var_4_type,
+		sf_rand_var_4_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
+	crayon_savefile_add_variable(details, &sf_rand_var_5, sf_rand_var_5_type,
+		sf_rand_var_5_length, SFV_MISTAKES_MADE, VAR_STILL_PRESENT);
 
 	//Set the savefile
 	if(crayon_savefile_solidify(details)){return 1;}

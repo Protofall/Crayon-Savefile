@@ -30,7 +30,7 @@ typedef struct my_savefile_var{
 	//NOTE: static const vars will have a copy in each object file. If you want to only have one copy
 		//just remove the static const and set each var's value in setup_savefile()
 
-//v0 VARS
+//v1 VARS
 
 // uint16_t *sf_old_coins;
 #define sf_old_coins_type CRAYON_TYPE_UINT16
@@ -60,7 +60,7 @@ char *sf_name[sf_var4_length];	// "sf_var4_length" strings with 16 chars each
 #define sf_name_length 16
 
 
-//v1 VARS
+//v2 VARS
 
 uint8_t *sf_myspace;
 #define sf_myspace_type CRAYON_TYPE_UINT8
@@ -70,11 +70,35 @@ double *sf_speedrun_times;
 #define sf_speedrun_times_type CRAYON_TYPE_DOUBLE
 #define sf_speedrun_times_length 2
 
-//v2 vars
+// float *sf_garbage;
+#define sf_garbage_type CRAYON_TYPE_FLOAT
+#define sf_garbage_length 128
+
+//v3 vars
 
 uint32_t *sf_coins;
 #define sf_coins_type CRAYON_TYPE_UINT32
-#define sf_coins_length 1	//If you want, these length defines could be unsigned int consts.
+#define sf_coins_length 1
+
+int32_t *sf_rand_var_1;
+#define sf_rand_var_1_type CRAYON_TYPE_SINT32
+#define sf_rand_var_1_length 1
+
+float *sf_rand_var_2;
+#define sf_rand_var_2_type CRAYON_TYPE_FLOAT
+#define sf_rand_var_2_length 1
+
+uint16_t *sf_rand_var_3;
+#define sf_rand_var_3_type CRAYON_TYPE_UINT16
+#define sf_rand_var_3_length 1
+
+int16_t *sf_rand_var_4;
+#define sf_rand_var_4_type CRAYON_TYPE_SINT16
+#define sf_rand_var_4_length 1
+
+int8_t *sf_rand_var_5;
+#define sf_rand_var_5_type CRAYON_TYPE_SINT8
+#define sf_rand_var_5_length 1
 
 
 //For those unfamiliar with enum, a value with no assigned number is equal to the previous value plus 1

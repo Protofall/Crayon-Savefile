@@ -1168,12 +1168,6 @@ uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	crayon_savefile_history_t *var = details->history;
 	while(var){
-		#if CRAYON_DEBUG == 1
-
-		printf("ID: %03d. INFO: %d %d.\n", var->id, var->version_removed, details->latest_version);
-
-		#endif
-
 		if(var->version_removed > details->latest_version){	//We only give space to vars that still exist
 			switch(var->data_type){
 				case CRAYON_TYPE_DOUBLE:
