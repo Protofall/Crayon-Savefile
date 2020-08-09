@@ -1,0 +1,4 @@
+#Trying to get the program to "just compile" on PC right now
+
+src_files = Glob('#/*.c')
+Program(src_files, LIBS=['CrayonSavefile'], LIBPATH='../../libCrayonSavefile/lib/linux/')

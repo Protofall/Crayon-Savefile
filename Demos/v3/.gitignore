@@ -6,5 +6,4 @@
 *.iso
 cdfs/*
 Crayon-Savefile-Demo
-
-
+.sconsign.dblite

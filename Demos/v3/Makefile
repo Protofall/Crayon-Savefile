@@ -88,9 +88,8 @@ $(SUBDIRS):
 # pc builds
 #------------------------------------------------------------------------------
 
-THING = ../../libCrayonSavefile/lib/linux
-INC_PATH = -I$(THING)
-LINK_PATH = -L$(THING)
+INC_PATH = -I../../libCrayonSavefile/include
+LINK_PATH = -L../../libCrayonSavefile/lib/linux
 
 pc: $(TARGET)
 
@@ -99,7 +98,7 @@ clean-pc:
 	rm -f "saves/SAVE_DEMO3.s"
 
 $(TARGET):
-	gcc -g -Wall $(INC_PATH) -c -o graphics.o graphics.c
-	gcc -g -Wall $(INC_PATH) -c -o setup.o setup.c
-	gcc -g -Wall $(INC_PATH) -c -o main.o main.c
-	gcc -g -Wall $(INC_PATH) $(LINK_PATH) -o $@ $(OFILES) -lcrayon
+	gcc -g -Wall $(INC_PATH) -c -o graphics.o graphics.c -lCrayonSavefile
+	gcc -g -Wall $(INC_PATH) -c -o setup.o setup.c -lCrayonSavefile
+	gcc -g -Wall $(INC_PATH) -c -o main.o main.c -lCrayonSavefile
+	gcc -g -Wall $(INC_PATH) $(LINK_PATH) -o $@ $(OFILES) -lCrayonSavefile

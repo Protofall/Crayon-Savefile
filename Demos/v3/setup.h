@@ -3,8 +3,8 @@
 
 #include "extra_structs.h"
 
-#include <crayon/savefile.h>
-#include <crayon/crayon.h>
+#include <CrayonSavefile/savefile.h>
+#include <CrayonSavefile/crayon.h>
 
 #include <stdlib.h>
 #include <string.h>
