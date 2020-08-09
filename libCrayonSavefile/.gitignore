@@ -1,3 +1,5 @@
+*.a
+*.lib
 *.o
 *.elf
 *.bin

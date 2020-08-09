@@ -910,7 +910,9 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 
 		//The size is off, the savefile must have been tampered with
 		if(expected_size != data_length){
+			#if CRAYON_DEBUG == 1
 			printf("Deserial, wrong sizes: %d %d\n", expected_size, data_length);
+			#endif
 			return -1;
 		}
 
@@ -948,78 +950,41 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		uint32_t i, index = 0;
 		uint32_t pointers[CRAYON_NUM_TYPES] = {0};
 		while(curr != NULL){
-			//If the variable currently exists, assign its pointer
-				//What does "CURRENTLY" mean?
-					//We want to set array if the variable existed in this version
-					//But we want to copy over vars if its a variable that still exists in the current version
-					//(ie. removed > latest)
-
-			// printf("VERSIONS: %d, %d, %d\n", loaded_version, curr->version_added, curr->version_removed);
+			//If the variable exists in the loaded version
 			if(loaded_version >= curr->version_added && loaded_version < curr->version_removed){
-				// printf("ID %d, type: %d\n", curr->id, curr->data_type);	//UINT16
 				switch(curr->data_type){
 					case CRAYON_TYPE_DOUBLE:
 						array[index] = old_savedata.doubles + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_double)[i] = ((double*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_FLOAT:
 						array[index] = old_savedata.floats + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_float)[i] = ((float*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_UINT32:
-					// printf("\tTESTETRYDSGF\n");
 						array[index] = old_savedata.u32 + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_u32)[i] = ((uint32_t*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_SINT32:
 						array[index] = old_savedata.s32 + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_s32)[i] = ((int32_t*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_UINT16:
-						// printf("ADDR %d\n", curr->data_ptr.t_u16);	//Its NULL...
 						array[index] = old_savedata.u16 + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_u16)[i] = ((uint16_t*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_SINT16:
 						array[index] = old_savedata.s16 + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_s16)[i] = ((int16_t*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_UINT8:
 						array[index] = old_savedata.u8 + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_u8)[i] = ((uint8_t*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_SINT8:
 						array[index] = old_savedata.s8 + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_s8)[i] = ((int8_t*)array[index])[i];
-						// }
 						break;
 					case CRAYON_TYPE_CHAR:
 						array[index] = old_savedata.chars + pointers[curr->data_type];
-						// for(i = 0; i < curr->data_length; i++){
-							// (*curr->data_ptr.t_char)[i] = ((char*)array[index])[i];
-						// }
 						break;
 				}
 				pointers[curr->data_type] += curr->data_length;
 
 				//Current variables and setting them to variables that existed in that version
 				if(curr->version_removed > details->latest_version){
-					// printf("ID %d, type: %d\n", curr->id, curr->data_type);	//UINT16
 					switch(curr->data_type){
 						case CRAYON_TYPE_DOUBLE:
 							for(i = 0; i < curr->data_length; i++){
@@ -1032,7 +997,6 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 							}
 							break;
 						case CRAYON_TYPE_UINT32:
-							// printf("ADDR %d\n", array[index]);
 							for(i = 0; i < curr->data_length; i++){
 								(*curr->data_ptr.t_u32)[i] = ((uint32_t*)array[index])[i];
 							}
@@ -1081,6 +1045,8 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		//Call the user function to handle old to new savedata transfers
 		(*details->upgrade_savefile_func)(array, loaded_version, details->latest_version);
 
+		#if CRAYON_DEBUG == 1
+
 		printf("OLD v%d\n", loaded_version);
 		//size update isn't needed for calculations, only to show correct value in function
 		old_savedata.size = sizeof(crayon_savefile_version_t) + (8 * old_savedata.lengths[0]) +
@@ -1089,6 +1055,8 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		old_savedata.lengths[7] + old_savedata.lengths[8];
 		__crayon_savefile_print_savedata(&old_savedata);
 		printf("\n");
+
+		#endif
 
 		//Free the array
 		free(array);
@@ -1105,9 +1073,13 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		crayon_savefile_buffer_to_savedata(new_savedata, data);
 	}
 
+	#if CRAYON_DEBUG == 1
+
 	printf("NEW v%d\n", details->latest_version);
 	__crayon_savefile_print_savedata(new_savedata);
 	printf("\n");
+
+	#endif
 
 	return 0;
 }

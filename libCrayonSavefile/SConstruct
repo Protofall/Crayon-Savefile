@@ -1,9 +1,9 @@
 #Get arguments in the format we want
 PLATFORM = ARGUMENTS.get('PLATFORM')
-DEBUG = ARGUMENTS.get('DEBUG').lower()	#YOU CAN'T LOWER "None"
+DEBUG = str(ARGUMENTS.get('DEBUG')).lower()	#I convert to string since 'None' type can't be lowered
 if DEBUG == 'true' or DEBUG == '1':
 	DEBUG = True
-if DEBUG == 'false' or DEBUG == '0':
+if DEBUG == 'false' or DEBUG == '0' or DEBUG == 'none':
 	DEBUG = False
 
 #Check if arguments are valid
@@ -19,16 +19,17 @@ if PLATFORM == None or PLATFORM not in supported_platforms or DEBUG != False and
 
 	exit(1)
 
-#Start building the program
-env = list()
-specific_platform = list()
-
 #Create the environments and platform name
 import os
+env = list()
+specific_platform = list()
 if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	# The # symbol means relative to our working directory
 	env.append(Environment(CPPPATH='#/include', CC = 'kos-cc', AR = 'kos-ar'))
+	env[-1]['ENV']['PATH'] = os.environ['PATH']	#Import PATH for us. This fixes the "Unable to find kos-cc" thing
+												#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
+	env[-1]['CFLAGS'].append(env[-1]['ENV']['KOS_CFLAGS'].split())
 	specific_platform.append('dreamcast')
 
 from sys import platform
@@ -45,14 +46,11 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
 	#Add in some cflags if in debug mode
 	if DEBUG == True:
-		e['CFLAGS'].append('-g -DCRAYON_DEBUG=1')
+		e['CFLAGS'].append(['-g', '-DCRAYON_DEBUG=1'])
 
 	build_dir = 'build/' + p + '/'
-	print 'build_dir: ' + build_dir
 	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir
 													#duplicate=0 means it won't duplicate the src files
 
 	prog_files = Glob('#/' + build_dir + '*.c') #I know its weird, but we have to specify the output path here
 	e.Library(target='#/lib/' + p + '/' + 'CrayonSavefile', source=prog_files)
-
-
