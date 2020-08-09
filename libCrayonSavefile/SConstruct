@@ -25,7 +25,7 @@ env = list()
 specific_platform = list()
 if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	# The # symbol means relative to our working directory
-	env.append(Environment(CPPPATH='#/include', CC = 'kos-cc', AR = 'kos-ar'))
+	env.append(Environment(CPPPATH='#/include/crayon_savefile/', CC = 'kos-cc', AR = 'kos-ar'))
 	env[-1]['ENV']['PATH'] = os.environ['PATH']	#Import PATH for us. This fixes the "Unable to find kos-cc" thing
 												#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
@@ -42,6 +42,9 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 		specific_platform.append('windows')
 	elif platform == "darwin":
 		specific_platform.append('mac')
+	else:
+		print "Platform \"" + platform + "\" isn't supported"
+		exit(1)
 
 #Create our library/s
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists

@@ -1,4 +1,26 @@
 #Trying to get the program to "just compile" on PC right now
 
+env = Environment()
+
+from sys import platform
+if platform == "linux" or platform == "linux2":
+	specific_platform = 'linux'
+elif platform == "win32":
+	specific_platform = 'windows'
+elif platform == "darwin":
+	specific_platform = 'mac'
+else:
+	print "Platform \"" + platform + "\" isn't supported"
+	exit(1)
+
+
+
+
+lib_path = '../../libCrayonSavefile/lib/' + specific_platform +'/'
+
+#We can't build our program if the library file is missing
+target_prog = 'Crayon-Savefile-Demo'
+env.Depends(target_prog, lib_path + 'CrayonSavefile')
+
 src_files = Glob('#/*.c')
-Program(src_files, LIBS=['CrayonSavefile'], LIBPATH='../../libCrayonSavefile/lib/linux/')
+env.Program(target_prog, src_files, LIBS=['CrayonSavefile'], LIBPATH=lib_path)
