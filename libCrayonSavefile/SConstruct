@@ -30,6 +30,7 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 												#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
 	env[-1]['CFLAGS'].append(env[-1]['ENV']['KOS_CFLAGS'].split())
+	env[-1]['LIBSUFFIX'] = '.a'	#Making sure we use the right suffix
 	specific_platform.append('dreamcast')
 
 from sys import platform
