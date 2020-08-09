@@ -1,51 +1,58 @@
-print "This is just a copy of Crayon's sconstruct file and is a WIP"
-exit(1)
-
+#Get arguments in the format we want
 PLATFORM = ARGUMENTS.get('PLATFORM')
-if PLATFORM == None:
+DEBUG = ARGUMENTS.get('DEBUG').lower()	#YOU CAN'T LOWER "None"
+if DEBUG == 'true' or DEBUG == '1':
+	DEBUG = True
+if DEBUG == 'false' or DEBUG == '0':
+	DEBUG = False
+
+#Check if arguments are valid
+supported_platforms = ['dreamcast', 'pc', 'all']
+if PLATFORM == None or PLATFORM not in supported_platforms or DEBUG != False and DEBUG != True:
 	print """
-	Please specify the target platform to compile Crayon for, or to clean, on the command
-	line (eg. `scons PLATFORM=dreamcast`). Run `ls code` for a list of platform names
+	Please specify the target platform to compile or clean Crayon Savefile for on the command
+	line (eg. `scons PLATFORM=dreamcast DEBUG=false`).
 	"""
+	print "\tSupported platforms are:"
+	for p in supported_platforms:
+		print "\t- " + p
+
 	exit(1)
 
+#Start building the program
+env = list()
+specific_platform = list()
+
+#Create the environments and platform name
 import os
+if PLATFORM == 'dreamcast' or PLATFORM == 'all':
+	# The # symbol means relative to our working directory
+	env.append(Environment(CPPPATH='#/include', CC = 'kos-cc', AR = 'kos-ar'))
+	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
+	specific_platform.append('dreamcast')
 
-#Set vars non-dependent on environment
-LIB_NAME	= "crayon"
-SRC			= "code/" + PLATFORM
-LIB			= "lib/" + PLATFORM
-BUILD		= "build"
+from sys import platform
+if PLATFORM == 'pc' or PLATFORM == 'all':
+	env.append(Environment(CPPPATH='#/include'))
+	if platform == "linux" or platform == "linux2":
+		specific_platform.append('linux')
+	elif platform == "win32":
+		specific_platform.append('windows')
+	elif platform == "darwin":
+		specific_platform.append('mac')
 
-Repository(SRC)	#Adds the source code for Glob to search in
-CFILES		= ["code/" + PLATFORM + "/" + str(s) for s in Glob('*.c')]	#Converts SCons objects to str (Still list of X)
-OBJS		= ["build/"+os.path.splitext(f)[0]+".o" for f in CFILES]
+#Create our library/s
+for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
+	#Add in some cflags if in debug mode
+	if DEBUG == True:
+		e['CFLAGS'].append('-g -DCRAYON_DEBUG=1')
 
-#Setup environment
-env_crayon = Environment(CPPPATH = ['.'], CC = 'kos-cc')
-env_crayon['ENV']['PATH'] = os.environ['PATH']	#Import PATH for us. This fixes the "Unable to find kos-cc" thing
-												#You could just add "ENV = os.environ" to the constructor instead
-env_crayon['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
+	build_dir = 'build/' + p + '/'
+	print 'build_dir: ' + build_dir
+	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir
+													#duplicate=0 means it won't duplicate the src files
 
-#Set var dependent on environment
-CFLAGS		= env_crayon['ENV']['KOS_CFLAGS'] + " -Iinclude/crayon"
-env_crayon.Replace(CCFLAGS=CFLAGS)	#Adds more flags to the existing var
-# env_crayon.Replace(CCFLAGS=os.environ.get('KOS_CFLAGS') + " " + CFLAGS)
-env_crayon.Replace(CRAYON_LIB_PATH=LIB)
-env_crayon.Replace(KOS_AR=env_crayon['ENV']['KOS_AR'])
+	prog_files = Glob('#/' + build_dir + '*.c') #I know its weird, but we have to specify the output path here
+	e.Library(target='#/lib/' + p + '/' + 'CrayonSavefile', source=prog_files)
 
-# #Create new builder
-lib = Builder(action=["mkdir -p $CRAYON_LIB_PATH",
-					"rm -f $TARGET",
-					"$KOS_AR rcs $TARGET $SOURCES"])
 
-# #Add the builders
-builders = { "Lib": lib}
-env_crayon.Append(BUILDERS=builders)
-
-#Create files and folders
-for f in CFILES:#{
-	env_crayon.Object("build/" + os.path.splitext(str(f))[0]+".o", str(f))
-#}
-lib_build = env_crayon.Lib(target = LIB + "/lib" + LIB_NAME + ".a", source = OBJS)
-Clean(lib_build, [LIB, BUILD])

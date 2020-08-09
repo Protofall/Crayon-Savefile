@@ -14,7 +14,7 @@
 
 #endif
 
-#include "crayon.h"
+#include <crayon.h>
 
 //Var types the user passes into functions
 enum {

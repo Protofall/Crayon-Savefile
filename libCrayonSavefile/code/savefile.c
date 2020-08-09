@@ -124,6 +124,16 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 	return 0;
 }
 
+int8_t crayon_savefile_set_hdr_string(crayon_savefile_details_t *details, const char *string, uint8_t string_id){
+	uint16_t max_length = crayon_savefile_user_string_length(string_id);
+	uint16_t string_length = strlen(string);
+	if(max_length == 0 || string_length >= max_length){return -1;}
+
+	strncpy(details->strings[string_id], string, max_length);
+
+	return 0;
+}
+
 int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *image, const char *palette,
 	uint8_t icon_anim_count, uint16_t icon_anim_speed){
 	#if defined(_arch_dreamcast)
@@ -401,7 +411,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	printf("\n---SOLIDIFY'S ENDING STATS---\n");
 	printf("SF Size: HDR %d BODY %d\n", CRAYON_SF_HDR_SIZE, details->savedata.size);
-	printf("Version size: %d. Savedata lengths: %d, %d, %d, %d, %d, %d, %d, %d, %d\n", sizeof(crayon_savefile_version_t),
+	printf("Version size: %ld. Savedata lengths: %d, %d, %d, %d, %d, %d, %d, %d, %d\n", sizeof(crayon_savefile_version_t),
 		details->savedata.lengths[0], details->savedata.lengths[1], details->savedata.lengths[2],
 		details->savedata.lengths[3], details->savedata.lengths[4], details->savedata.lengths[5],
 		details->savedata.lengths[6], details->savedata.lengths[7], details->savedata.lengths[8]);
@@ -1279,16 +1289,6 @@ void crayon_savefile_buffer_to_savedata(crayon_savefile_data_t *data, uint8_t *b
 	// buffer += sizeof(char) * data->lengths[CRAYON_TYPE_CHAR];
 
 	return;
-}
-
-int8_t crayon_savefile_set_hdr_string(crayon_savefile_details_t *details, const char *string, uint8_t string_id){
-	uint16_t max_length = crayon_savefile_user_string_length(string_id);
-	uint16_t string_length = strlen(string);
-	if(max_length == 0 || string_length >= max_length){return -1;}
-
-	strncpy(details->strings[string_id], string, max_length);
-
-	return 0;
 }
 
 //This might be able to be optimised
