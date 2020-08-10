@@ -22,7 +22,6 @@ lib_path = lib_folder + 'lib/' + specific_platform +'/'
 #We can't build our program if the library file is missing
 env = Environment(CPPPATH = include_path)
 target_prog = 'Crayon-Savefile-Demo'
-# env.Depends(target_prog, lib_path + 'libCrayonSavefile.a')	#The dep part is wrong in multiple ways
 env.Depends(target_prog, lib_path + env['LIBPREFIX'] + 'CrayonSavefile' + env['LIBSUFFIX'])
 
 src_files = Glob('#/*.c')

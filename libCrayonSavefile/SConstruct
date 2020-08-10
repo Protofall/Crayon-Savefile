@@ -31,7 +31,8 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 												#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
 	env[-1]['CFLAGS'].append(env[-1]['ENV']['KOS_CFLAGS'].split())
-	env[-1]['LIBSUFFIX'] = '.a'	#Making sure we use the right suffix
+	env[-1]['LIBPREFIX'] = 'lib'	#Making sure we use the right prefix and suffix
+	env[-1]['LIBSUFFIX'] = '.a'
 	specific_platform.append('dreamcast')
 
 from sys import platform
@@ -51,7 +52,8 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
 	#Add in some cflags if in debug mode
 	if DEBUG == True:
-		e['CFLAGS'].append(['-g', '-DCRAYON_DEBUG=1'])
+		e.Append(CFLAGS = '-g')	#NOTE: This is a SCons specific function
+		e.Append(CPPDEFINES = {'CRAYON_DEBUG':1})
 
 	build_dir = 'build/' + p + '/'
 	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir
