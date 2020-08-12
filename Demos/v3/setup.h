@@ -2,7 +2,9 @@
 #define MS_SETUP_H
 
 #include "extra_structs.h"
-#include "crayon.h"
+
+#include <crayon_savefile/savefile.h>
+#include <crayon_savefile/crayon.h>
 
 #include <stdlib.h>
 #include <string.h>

@@ -18,6 +18,14 @@ The body is the version number (32 bit unsigned value by default) followed by th
 
 The program will know how to handle older savefiles using its history data list that is created when the user "add"s variables to the savefile and later solidify it.
 
+### Building/SConstruct
+
+In order to build the library and the Demos, you need to use the SConstruct files. If you're familiar with Makefiles, then they are similar in the sense that they are both build languages. If you have the apt package manager use the following command to install SConstruct:
+
+`sudo apt-get install scons`
+
+To build the library file go to "libCrayonSavefile" and type `scons PLATFORM=all DEBUG=0` to build both Dreamcast and one of the PC builds (Depending on your compiler it will build either the Windows, Mac or Linux files). If you only want to build for one of the platforms, you can instead choose `PLATFORM=dreamcast` or `PLATFORM=pc`. The SConstruct file in the demos are called the same way too.
+
 ### Other
 
 Special thanks to BlueCrab for showing me a more detailed example of savefiles on the Dreamcast than other examples I had seen, MrNeo240 for helping me understand the Dreamcast Savefile icon and eyecatcher bitmap formats and thanks to MrNeo240 and Lerabot for using the old savefile system and giving advice for improvements.

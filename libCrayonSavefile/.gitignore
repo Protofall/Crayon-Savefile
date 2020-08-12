@@ -1,9 +1,11 @@
+*.a
+*.lib
 *.o
 *.elf
 *.bin
 *.cdi
 *.7z
 *.iso
-cdfs/*
-Crayon-Savefile-Demo
 .sconsign.dblite
+
+

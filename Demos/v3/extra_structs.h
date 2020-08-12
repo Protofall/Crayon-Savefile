@@ -1,7 +1,7 @@
 #ifndef MY_SAVEFILE_VARS_H
 #define MY_SAVEFILE_VARS_H
 
-#include "savefile.h"
+#include <crayon_savefile/savefile.h>
 
 
 //WARNING. Don't manually modify the pointers. Crayon savefile functions will set them itself

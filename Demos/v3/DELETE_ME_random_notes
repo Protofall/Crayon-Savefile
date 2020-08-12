@@ -1,3 +1,36 @@
+//LIB SCONSTRUCT FILE FUNCTIONALITY
+    //must take platform from args
+        //dc, pc or "all" for both
+            //I have no idea if "all" is possible. If I set a PC and DC flags and have if statements for both,
+            //it should work
+    //have an option to compile in debug mode
+        //This adds compile parameters -DCRAYON_DEBUG=1 and -g
+        //Do this by modifying the environment
+    //When building Dreamcast, don't forget to set the compiler flags, change the gcc compiler and the "ar" thing
+
+    //I need to control *where* it outputs the lib file. I also need to tell it where the .h files are too
+    //-c should require the user to specify a platform to clean aswell
+
+
+
+
+# ar
+
+#    Sets construction variables for the ar library archiver.
+
+#    Sets: $AR, $ARCOM, $ARFLAGS, $LIBPREFIX, $LIBSUFFIX, $RANLIB, $RANLIBCOM, $RANLIBFLAGS.
+
+
+
+
+
+
+
+
+//CHECK BELOW NOTES
+
+
+
 // New system plan
 
 // (IMPLEMENTED)
@@ -53,8 +86,6 @@
 
 
 
-//FINISH THE SAVEFILE DELETE FUNCTION
-
 
 //Notes:
 
@@ -90,94 +121,5 @@ int main()
 
     return 0;
 }
-
-
-
-
-
-
-
-#include <stdio.h>
-#include <stdint.h>
-
-typedef union crayon_savefile_variable_ptr{
-    double *doubles;
-    float *floats;
-    uint32_t *u32;
-    int32_t *s32;
-    uint16_t *u16;
-    int16_t *s16;
-    uint8_t *u8;
-    int8_t *s8;
-    char *chars;
-} crayon_savefile_variable_ptr_t;
-
-void * func(void * a, uint8_t type){
-    if(type == 0){
-        return (uint8_t*)a;
-    }
-    if(type == 1){
-        return (int8_t*)a;
-    }
-}
-
-int main()
-{
-    crayon_savefile_variable_ptr_t a;
-    a.s8 = NULL;
-    
-    int8_t *b = func(&a, 1);
-    
-    printf("Hello World\n");
-
-    return 0;
-}
-
-
-
-//FUNCTIONS THAT HAVE BEEN CHECKED
-uint8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details, const char *save_name,
-    crayon_savefile_version_t latest_version, void (*default_values_func)(),
-    uint8_t (*update_savefile_func)(crayon_savefile_old_variable_t*, crayon_savefile_version_t,
-    crayon_savefile_version_t));
-uint8_t crayon_savefile_set_app_id(details, string);
-uint8_t crayon_savefile_set_short_desc(details, string);
-uint8_t crayon_savefile_set_long_desc(details, string);
-uint8_t crayon_savefile_set_string(crayon_savefile_details_t *details, const char *string, uint8_t string_id);
-void crayon_savefile_free(crayon_savefile_details_t *details);
-void crayon_savefile_free_base_path();
-uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes);
-uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details);
-uint16_t crayon_savefile_detail_string_length(uint8_t string_id);
-uint32_t crayon_savefile_check_device_free_space(int8_t device_id);
-void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata);
-char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t save_device_id);
-void crayon_savefile_free_icon(crayon_savefile_details_t *details);
-void crayon_savefile_free_eyecatcher(crayon_savefile_details_t *details);
-void crayon_savefile_free_savedata(crayon_savefile_data_t *savedata);
-uint8_t crayon_savefile_set_base_path(char *path);
-uint8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *image, const char *palette,
-    uint8_t icon_anim_count, uint16_t icon_anim_speed);
-uint8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const char *eyecatch_path);
-uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
-void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
-uint32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *data_ptr, uint8_t data_type, 
-    uint32_t length, crayon_savefile_version_t version_added, crayon_savefile_version_t version_removed);
-void crayon_savefile_buffer_to_savedata(crayon_savefile_data_t *data, uint8_t *buffer);
-void crayon_savefile_update_all_device_infos(crayon_savefile_details_t *details);
-int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t save_device_id);
-int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, int8_t save_device_id);
-uint8_t crayon_savefile_solidify(crayon_savefile_details_t *details);
-void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer);
-int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details);
-int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
-
-
-//Should be good, but need to make sure we can compile first
-uint8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
-
-
-//UNFINISHED
-uint8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details);
 
 
