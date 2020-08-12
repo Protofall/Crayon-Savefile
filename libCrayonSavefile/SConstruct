@@ -30,7 +30,7 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	env[-1]['ENV']['PATH'] = os.environ['PATH']	#Import PATH for us. This fixes the "Unable to find kos-cc" thing
 												#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
-	env[-1]['CFLAGS'].append(env[-1]['ENV']['KOS_CFLAGS'].split())
+	# env[-1]['CFLAGS'].append(env[-1]['ENV']['KOS_CFLAGS'].split())
 	env[-1]['LIBPREFIX'] = 'lib'	#Making sure we use the right prefix and suffix
 	env[-1]['LIBSUFFIX'] = '.a'
 	specific_platform.append('dreamcast')

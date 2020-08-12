@@ -33,7 +33,7 @@ INTERMEDIATES += $(DTEX_FILES) $(addsuffix .pal,$(DTEX_FILES))
 #------------------------------------------------------------------------------
 
 SAVE_INCLUDE=-I../../libCrayonSavefile/include
-SAVE_LINK=-L/../../libCrayonSavefile/lib/dreamcast
+SAVE_LINK=-L../../libCrayonSavefile/lib/dreamcast
 
 CFLAGS = $(KOS_CFLAGS)
 CFLAGS += $(SAVE_INCLUDE)
@@ -76,7 +76,7 @@ $(SCRAMBLED): $(CDFS_DIR) $(TARGET).elf
 
 # link objects into elf
 $(TARGET).elf: $(OFILES)
-	$(KOS_CC) $(KOS_LDFLAGS) $(SAVE_LINK) -o $@ $(KOS_START) $^ $(LIBS)
+	kos-cc $(KOS_LDFLAGS) $(SAVE_LINK) -o $@ $(KOS_START) $^ $(LIBS)
 
 # create ROMDISK_IMGS in CDFS_DIR from subdirectories of ASSETS_DIR
 $(CDFS_DIR)/%.img: $(CDFS_DIR) $(DTEX_FILES)
@@ -87,21 +87,3 @@ $(CDFS_DIR)/%.img: $(CDFS_DIR) $(DTEX_FILES)
 # create output directories if not present
 $(SUBDIRS):
 	mkdir -p $@
-
-# pc builds
-#------------------------------------------------------------------------------
-
-# INC_PATH = -I../../libCrayonSavefile/include
-# LINK_PATH = -L../../libCrayonSavefile/lib/linux
-
-# pc: $(TARGET)
-
-# clean-pc:
-# 	rm -f *.o $(TARGET)
-# 	rm -f "saves/SAVE_DEMO3.s"
-
-# $(TARGET):
-# 	gcc -g -Wall $(INC_PATH) -c -o graphics.o graphics.c -lCrayonSavefile
-# 	gcc -g -Wall $(INC_PATH) -c -o setup.o setup.c -lCrayonSavefile
-# 	gcc -g -Wall $(INC_PATH) -c -o main.o main.c -lCrayonSavefile
-# 	gcc -g -Wall $(INC_PATH) $(LINK_PATH) -o $@ $(OFILES) -lCrayonSavefile
