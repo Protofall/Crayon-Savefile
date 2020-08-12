@@ -32,11 +32,14 @@ INTERMEDIATES += $(DTEX_FILES) $(addsuffix .pal,$(DTEX_FILES))
 # flags
 #------------------------------------------------------------------------------
 
+SAVE_INCLUDE=-I../../libCrayonSavefile/include
+SAVE_LINK=-L/../../libCrayonSavefile/lib/dreamcast
+
 CFLAGS = $(KOS_CFLAGS)
-CFLAGS += -I../../libCrayonSavefile/lib/dreamcast
+CFLAGS += $(SAVE_INCLUDE)
 # CFLAGS += -I$(KOS_BASE)/addons/zlib
 
-LIBS = -lz -lm $(KOS_LIBS)
+LIBS=-lCrayonSavefile -lz -lm $(KOS_LIBS)
 
 # main targets
 # ------------------------------------------------------------------------------
@@ -73,7 +76,7 @@ $(SCRAMBLED): $(CDFS_DIR) $(TARGET).elf
 
 # link objects into elf
 $(TARGET).elf: $(OFILES)
-	$(KOS_CC) $(KOS_LDFLAGS) -o $@ $(KOS_START) $^ $(LIBS)
+	$(KOS_CC) $(KOS_LDFLAGS) $(SAVE_LINK) -o $@ $(KOS_START) $^ $(LIBS)
 
 # create ROMDISK_IMGS in CDFS_DIR from subdirectories of ASSETS_DIR
 $(CDFS_DIR)/%.img: $(CDFS_DIR) $(DTEX_FILES)
@@ -88,17 +91,17 @@ $(SUBDIRS):
 # pc builds
 #------------------------------------------------------------------------------
 
-INC_PATH = -I../../libCrayonSavefile/include
-LINK_PATH = -L../../libCrayonSavefile/lib/linux
+# INC_PATH = -I../../libCrayonSavefile/include
+# LINK_PATH = -L../../libCrayonSavefile/lib/linux
 
-pc: $(TARGET)
+# pc: $(TARGET)
 
-clean-pc:
-	rm -f *.o $(TARGET)
-	rm -f "saves/SAVE_DEMO3.s"
+# clean-pc:
+# 	rm -f *.o $(TARGET)
+# 	rm -f "saves/SAVE_DEMO3.s"
 
-$(TARGET):
-	gcc -g -Wall $(INC_PATH) -c -o graphics.o graphics.c -lCrayonSavefile
-	gcc -g -Wall $(INC_PATH) -c -o setup.o setup.c -lCrayonSavefile
-	gcc -g -Wall $(INC_PATH) -c -o main.o main.c -lCrayonSavefile
-	gcc -g -Wall $(INC_PATH) $(LINK_PATH) -o $@ $(OFILES) -lCrayonSavefile
+# $(TARGET):
+# 	gcc -g -Wall $(INC_PATH) -c -o graphics.o graphics.c -lCrayonSavefile
+# 	gcc -g -Wall $(INC_PATH) -c -o setup.o setup.c -lCrayonSavefile
+# 	gcc -g -Wall $(INC_PATH) -c -o main.o main.c -lCrayonSavefile
+# 	gcc -g -Wall $(INC_PATH) $(LINK_PATH) -o $@ $(OFILES) -lCrayonSavefile
