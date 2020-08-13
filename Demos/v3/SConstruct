@@ -22,15 +22,15 @@ lib_path = lib_folder + 'lib/' + specific_platform +'/'
 #Create our environments are tell it where all the lib's .h files are
 env = Environment(CPPPATH = [include_path])
 
-target_prog = 'Crayon-Savefile-Demo'
+target_prog = '#/program/' + specific_platform + '/Crayon-Savefile-Demo'
 env.Depends(target_prog, lib_path + env['LIBPREFIX'] + 'CrayonSavefile' + env['LIBSUFFIX'])
 
 build_dir = 'build/' + specific_platform + '/'
 program_dir = 'program/' + specific_platform + '/'
 
-env.VariantDir(build_dir, 'code/', duplicate=0)
+env.VariantDir(build_dir, 'code/', duplicate = 0)
 
 #Create the objects and program, then copy the program to the program folder
 src_files = Glob('#/code/*.c')
-program_file = env.Program(target_prog, src_files, LIBS = ['CrayonSavefile'], LIBPATH = lib_path)
-env.Install(program_dir, program_file)
+program_file = env.Program(target = target_prog, source = src_files, LIBS = ['CrayonSavefile'], LIBPATH = lib_path)
+# env.Install(program_dir, program_file)
