@@ -20,7 +20,7 @@ SUBDIRS = $(CDFS_DIR) $(ROMDISKS_DIR)
 # files
 #------------------------------------------------------------------------------
 
-OFILES = $(patsubst %.c,%.o,$(wildcard *.c))
+OFILES = $(patsubst code/%.c,%.o,$(wildcard code/*.c))
 SCRAMBLED = $(CDFS_DIR)/1st_read.bin
 ROMDISK_IMGS = $(patsubst %,$(CDFS_DIR)/%.img,$(notdir $(wildcard $(ROMDISKS_DIR)/* $(ASSETS_DIR)/*)))
 DTEX_FILES = $(patsubst $(ASSETS_DIR)/%.png,$(ROMDISKS_DIR)/%.dtex,$(wildcard $(ASSETS_DIR)/*/*.png))
@@ -45,6 +45,9 @@ LIBS=-lCrayonSavefile -lz -lm $(KOS_LIBS)
 # ------------------------------------------------------------------------------
 
 all: cdi
+
+test:
+	echo $(OFILES)
 
 cdi: rm-cdi $(TARGET).cdi
 
@@ -77,6 +80,9 @@ $(SCRAMBLED): $(CDFS_DIR) $(TARGET).elf
 # link objects into elf
 $(TARGET).elf: $(OFILES)
 	kos-cc $(SAVE_LINK) -o $@ $(KOS_START) $^ $(LIBS)
+
+%.o: code/%.c
+	kos-cc -o $@ -c $(SAVE_INCLUDE) $^
 
 # create ROMDISK_IMGS in CDFS_DIR from subdirectories of ASSETS_DIR
 $(CDFS_DIR)/%.img: $(CDFS_DIR) $(DTEX_FILES)
