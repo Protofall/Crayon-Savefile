@@ -35,7 +35,7 @@ INTERMEDIATES += $(DTEX_FILES) $(addsuffix .pal,$(DTEX_FILES))
 SAVE_INCLUDE=-I../../libCrayonSavefile/include
 SAVE_LINK=-L../../libCrayonSavefile/lib/dreamcast
 
-CFLAGS = $(KOS_CFLAGS)
+CFLAGS =
 CFLAGS += $(SAVE_INCLUDE)
 # CFLAGS += -I$(KOS_BASE)/addons/zlib
 
@@ -76,7 +76,7 @@ $(SCRAMBLED): $(CDFS_DIR) $(TARGET).elf
 
 # link objects into elf
 $(TARGET).elf: $(OFILES)
-	kos-cc $(KOS_LDFLAGS) $(SAVE_LINK) -o $@ $(KOS_START) $^ $(LIBS)
+	kos-cc $(SAVE_LINK) -o $@ $(KOS_START) $^ $(LIBS)
 
 # create ROMDISK_IMGS in CDFS_DIR from subdirectories of ASSETS_DIR
 $(CDFS_DIR)/%.img: $(CDFS_DIR) $(DTEX_FILES)

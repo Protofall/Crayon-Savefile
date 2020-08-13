@@ -94,18 +94,19 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	error = crayon_savefile_init_savefile_details(details, "SAVE_DEMO3.s", SFV_CURRENT,
 		savefile_defaults, upgrade_savefile);
 	if(error){return 1;}
+
 	error += crayon_savefile_set_app_id(details, "ProtoSaveDemo3");
 	error += crayon_savefile_set_short_desc(details, "Save Demo 3");
 	error += crayon_savefile_set_long_desc(details, "Crayon's Savefile demo");
+	
 	if(error){return 1;}
 
 	#if defined(_arch_dreamcast)
 
 	//Load the VMU icon data
-	crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save");
+	if(crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save")){return 1;}
 
 	uint8_t * vmu_lcd_icon = NULL;
-
 	uint8_t vmu_screens_bitmap;
 	setup_vmu_icon_load(&vmu_lcd_icon, "/Save/LCD.bin", &vmu_screens_bitmap);
 

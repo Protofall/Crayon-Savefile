@@ -8,7 +8,8 @@
 #include "graphics.h"
 
 int main(){
-	return 0;
+	// return 0;
+	printf("ENTERING PROTO'S MAIN\n");
 	crayon_savefile_details_t savefile_details;
 
 	uint8_t setup_res = setup_savefile(&savefile_details);
@@ -29,7 +30,7 @@ int main(){
 	}
 
 	char buffer[500];
-	uint32_t bytes = CRAYON_SF_HDR_SIZE + savefile_details.savedata.size;
+	uint32_t bytes = crayon_savefile_get_savefile_size(&savefile_details);
 	if(!setup_res){
 		sprintf(buffer, "Save initialised. %d bytes, %d blocks (DC)\n", bytes, 
 			crayon_savefile_bytes_to_blocks(bytes));
@@ -45,11 +46,9 @@ int main(){
 		savefile_details.present_savefiles, savefile_details.current_savefiles);
 	strcat(buffer, buffer2);
 
-	#if defined(_arch_pc)
-
 	printf("%s", buffer);
 
-	#elif defined(_arch_dreamcast)
+	#if defined(_arch_dreamcast)
 
 	uint8_t end = 0;
 	while(!end){

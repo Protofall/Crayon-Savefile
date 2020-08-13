@@ -140,6 +140,7 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 
 	//Since BIOS can't render more than 3 for some reason
 	if(icon_anim_count > 3){
+		printf("help1\n");
 		return -1;
 	}
 
@@ -147,6 +148,7 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	uint32_t size;
 
 	if(!fp){
+		printf("help2\n");
 		return -1;
 	}
 
@@ -156,6 +158,7 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	fseek(fp, 0, SEEK_SET);
 
 	if(!(details->icon_data = malloc(size))){
+		printf("help3\n");
 		fclose(fp);
 		return -1;
 	}
@@ -167,6 +170,7 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	//--------------------------------
 
 	if(!(fp = fopen(palette, "rb"))){
+		printf("help4\n");
 		return -1;
 	}
 
@@ -175,6 +179,7 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	fseek(fp, 0, SEEK_SET);
 
 	if(!(details->icon_palette = malloc(size))){
+		printf("help5\n");
 		fclose(fp);
 		return -1;
 	}
@@ -1376,7 +1381,6 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 
 	char *savename = crayon_savefile_get_full_path(details, save_device_id);
 	if(!savename){
-		printf("update valid saves: 1\n");
 		return -1;
 	}
 
@@ -1389,18 +1393,14 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		fp = fopen(savename, "rb");
 		free(savename);
 		if(!fp){	//This usually means the file doesn't exist
-			printf("update valid saves: 2\n");
-
 			//Can't use details->savedata.size, doesn't include hdr and stuff
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_devices_free_space(save_device_id)){
-				printf("update valid saves: 4\n");
 				crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
 			}
 		}
 		else{	//File does exist, so it must be invalid if check failed
 			//We don't even set "present_savefiles" since the savefile is possibly corrupted
-			printf("update valid saves: 3\n");
 			fclose(fp);
 		}
 	}
@@ -1446,9 +1446,6 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		//If the version is greater, then we just leave it alone and say the device isn't present
 		//and ofc savefile not current
 	}
-
-	printf("present/current: %d %d %d\n", details->present_devices, details->present_savefiles,
-		details->current_savefiles);
 
 	return 0;
 }
