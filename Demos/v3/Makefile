@@ -1,4 +1,4 @@
-TARGET = Crayon-Savefile-Demo
+TARGET = Crayon-Savefile-Demo-v3
 IPBIN = ./IP.BIN
 
 # directories
@@ -7,27 +7,17 @@ IPBIN = ./IP.BIN
 # CD ROM contents will be placed here for packaging into a cdi
 CDFS_DIR = cdfs
 
-# each subdirectory <part> will produce <part>.img in CDFS_DIR
-ROMDISKS_DIR = romdisks
-
-# each subdirectory contains assets for conversion. outputs are placed in
-# ROMDISKS_DIR/<part>, where <part> is the name of the subdirectory
-ASSETS_DIR = assets
-
 # list of directories to be automatically created
-SUBDIRS = $(CDFS_DIR) $(ROMDISKS_DIR)
+SUBDIRS = $(CDFS_DIR)
 
 # files
 #------------------------------------------------------------------------------
 
-OFILES = $(patsubst code/%.c,%.o,$(wildcard code/*.c))
+OFILES = $(patsubst code/%.c,%.o,$(wildcard code/*.c)) romdisk_boot.o
 SCRAMBLED = $(CDFS_DIR)/1st_read.bin
-ROMDISK_IMGS = $(patsubst %,$(CDFS_DIR)/%.img,$(notdir $(wildcard $(ROMDISKS_DIR)/* $(ASSETS_DIR)/*)))
-DTEX_FILES = $(patsubst $(ASSETS_DIR)/%.png,$(ROMDISKS_DIR)/%.dtex,$(wildcard $(ASSETS_DIR)/*/*.png))
 
 # list of files to be removed by make clean
-INTERMEDIATES = $(OFILES) $(SCRAMBLED) $(ROMDISK_IMGS)
-INTERMEDIATES += $(DTEX_FILES) $(addsuffix .pal,$(DTEX_FILES))
+INTERMEDIATES = $(OFILES) $(SCRAMBLED)
 
 # flags
 #------------------------------------------------------------------------------
@@ -44,17 +34,15 @@ LIBS=-lCrayonSavefile -lz -lm $(KOS_LIBS)
 # main targets
 # ------------------------------------------------------------------------------
 
-all: cdi
+all: $(TARGET).elf
 
-test:
-	echo $(OFILES)
+cdi: $(TARGET).cdi
 
-cdi: rm-cdi $(TARGET).cdi
-
-elf: rm-elf $(TARGET).elf
+elf: $(TARGET).elf
 
 clean: rm-elf rm-cdi rm-bin rm-iso
 	-rm -f $(INTERMEDIATES)
+	-rm -f romdisk_boot.*
 
 rm-%:
 	-rm -f $(TARGET).$*
@@ -68,7 +56,7 @@ echo-%:
 include $(KOS_BASE)/Makefile.rules
 
 # create cdi image from CDFS_DIR
-$(TARGET).cdi: $(SCRAMBLED) $(ROMDISK_IMGS)
+$(TARGET).cdi: $(SCRAMBLED)
 	mkisofs -G $(IPBIN) -C 0,11702 -J -l -r -o $(TARGET).iso $(CDFS_DIR)
 	cdi4dc $(TARGET).iso $(TARGET).cdi
 
@@ -84,11 +72,11 @@ $(TARGET).elf: $(OFILES)
 %.o: code/%.c
 	kos-cc -o $@ -c $(SAVE_INCLUDE) $^
 
-# create ROMDISK_IMGS in CDFS_DIR from subdirectories of ASSETS_DIR
-$(CDFS_DIR)/%.img: $(CDFS_DIR) $(DTEX_FILES)
-	$(KOS_GENROMFS) -f $@ -d $(ASSETS_DIR)/$* -v
-# $(KOS_GENROMFS) = /opt/toolchains/dc/kos/utils/genromfs/genromfs
-# -x param might be able to remove the pack dir entirely...dunno yet
+romdisk_boot.img:
+	$(KOS_GENROMFS) -f $@ -d romdisk_boot
+
+romdisk_boot.o: romdisk_boot.img
+	$(KOS_BASE)/utils/bin2o/bin2o $< romdisk_boot $@
 
 # create output directories if not present
 $(SUBDIRS):

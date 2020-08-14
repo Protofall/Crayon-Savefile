@@ -1,15 +1,24 @@
+#if defined(_arch_dreamcast)
+
 //For the controller and mouse
-#ifdef _arch_dreamcast
 #include <dc/maple.h>
 #include <dc/maple/controller.h>
+
 #endif
 
 #include "setup.h"
 #include "graphics.h"
 
+
+#if defined(_arch_dreamcast)
+
+//Baked Romdisk
+extern uint8 romdisk_boot[];
+KOS_INIT_ROMDISK(romdisk_boot);
+
+#endif
+
 int main(){
-	// return 0;
-	printf("ENTERING PROTO'S MAIN\n");
 	crayon_savefile_details_t savefile_details;
 
 	uint8_t setup_res = setup_savefile(&savefile_details);
@@ -32,7 +41,7 @@ int main(){
 	char buffer[500];
 	uint32_t bytes = crayon_savefile_get_savefile_size(&savefile_details);
 	if(!setup_res){
-		sprintf(buffer, "Save initialised. %d bytes, %d blocks (DC)\n", bytes, 
+		sprintf(buffer, "Save initialised.\n%d bytes, %d blocks (DC)\n", bytes, 
 			crayon_savefile_bytes_to_blocks(bytes));
 	}
 	else{

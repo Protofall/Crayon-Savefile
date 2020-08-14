@@ -104,20 +104,20 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	#if defined(_arch_dreamcast)
 
 	//Load the VMU icon data
-	if(crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save")){return 1;}
+	// if(crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save")){return 1;}
 
 	uint8_t * vmu_lcd_icon = NULL;
 	uint8_t vmu_screens_bitmap;
-	setup_vmu_icon_load(&vmu_lcd_icon, "/Save/LCD.bin", &vmu_screens_bitmap);
+	setup_vmu_icon_load(&vmu_lcd_icon, "/rd/LCD.bin", &vmu_screens_bitmap);
 
 	//Apply the VMU LCD icon (Apparently this is automatic if your savefile is an ICONDATA.VMS)
 	crayon_peripheral_vmu_display_icon(vmu_screens_bitmap, vmu_lcd_icon);
 	free(vmu_lcd_icon);	//Already free-d within the above function
 	
-	if(crayon_savefile_set_icon(details, "/Save/image.bin", "/Save/palette.bin", 3, 15)){return 1;}
-	if(crayon_savefile_set_eyecatcher(details, "Save/eyecatch3.bin")){return 1;}
+	if(crayon_savefile_set_icon(details, "/rd/image.bin", "/rd/palette.bin", 3, 15)){return 1;}
+	if(crayon_savefile_set_eyecatcher(details, "/rd/eyecatch3.bin")){return 1;}
 
-	fs_romdisk_unmount("/Save");
+	// fs_romdisk_unmount("/Save");
 
 	#endif
 
