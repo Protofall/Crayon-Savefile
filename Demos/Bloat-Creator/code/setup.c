@@ -48,7 +48,10 @@ uint8_t setup_savefile(crayon_savefile_details_t * details, uint32_t size){
 	#endif
 
 	//Remove the version number and hdr size
-	sf_vars_size = size - sizeof(crayon_savefile_version_t) - CRAYON_SF_HDR_SIZE;
+	if(size <= sizeof(crayon_savefile_version_t) + CRAYON_SF_HDR_SIZE){
+		sf_vars_size = size - sizeof(crayon_savefile_version_t) - CRAYON_SF_HDR_SIZE;
+	}
+	sf_vars_size = 1;	//Just so we don't make a MASSIVE file
 
 	//Now lets construct our history
 	crayon_savefile_add_variable(details, &sf_vars, sf_vars_type, sf_vars_size, SFV_INITIAL, VAR_STILL_PRESENT);

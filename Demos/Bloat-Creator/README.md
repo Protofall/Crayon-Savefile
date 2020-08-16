@@ -1,6 +1,6 @@
-# IMPORTANT
+# BLOAT CREATOR
 
-Even though the repo is public and the library itself is fully functional, some parts of this repo are still a WIP. You need to manually build the library, navigate to REPO_ROOT/libCrayonSavefile and run the scons command.
+This program only exists so you can easily make savefiles of X Blocks/Bytes. Its useful for debugging.
 
-To build the demo here currently scons will build the PC version in `programs/` and make does DC in the Demo's root. Eventually they'll both use the scons similar to the library creation script.
 
+Bugs: For some reason I can generate savefiles of 115 blocks, but if I make it more (Say 130 blocks) then it seems to get stuck somewhere. idk where though.
