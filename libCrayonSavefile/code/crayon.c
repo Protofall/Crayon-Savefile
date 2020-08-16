@@ -21,24 +21,6 @@ void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes){
 	return;
 }
 
-#if defined(_arch_dreamcast)
-
-uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint){
-	void *buffer;
-
-	ssize_t size = fs_load(filename, &buffer); // Loads the file "filename" into RAM
-
-	if(size == -1){
-		return 1;
-	}
-	
-	fs_romdisk_mount(mountpoint, buffer, 1); // Now mount that file as a romdisk, buffer will be freed when romdisk is unmounted
-	return 0;
-}
-
-#endif
-
-
 vec2_s8_t crayon_peripheral_dreamcast_get_port_and_slot(int8_t save_device_id){
 	vec2_s8_t values = {-1,-1};
 	if(save_device_id < 0 || save_device_id >= 8){return values;}

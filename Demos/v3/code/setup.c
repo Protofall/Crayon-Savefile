@@ -103,9 +103,6 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 
 	#if defined(_arch_dreamcast)
 
-	//Load the VMU icon data
-	// if(crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save")){return 1;}
-
 	uint8_t * vmu_lcd_icon = NULL;
 	uint8_t vmu_screens_bitmap;
 	setup_vmu_icon_load(&vmu_lcd_icon, "/rd/LCD.bin", &vmu_screens_bitmap);
@@ -116,8 +113,6 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	
 	if(crayon_savefile_set_icon(details, "/rd/image.bin", "/rd/palette.bin", 3, 15)){return 1;}
 	if(crayon_savefile_set_eyecatcher(details, "/rd/eyecatch3.bin")){return 1;}
-
-	// fs_romdisk_unmount("/Save");
 
 	#endif
 

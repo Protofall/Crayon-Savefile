@@ -38,14 +38,6 @@ void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes);	//UNFINISHED.
 
 void crayon_misc_encode_to_buffer(uint8_t *buffer, uint8_t *data, size_t bytes);
 
-#if defined(_arch_dreamcast)
-
-#include <kos/fs_romdisk.h> //For romdisk swapping
-
-uint8_t crayon_memory_mount_romdisk(char *filename, char *mountpoint);
-
-#endif
-
 //Only used for port/slot in dreamcast. x is port, y is slot
 typedef struct vec2_s8{
 	int8_t x, y;

@@ -22,7 +22,7 @@ lib_path = lib_folder + 'lib/' + specific_platform +'/'
 #Create our environments are tell it where all the lib's .h files are
 env = Environment(CPPPATH = [include_path], BUILD_DIR = 'build/' + specific_platform + '/')
 
-target_prog = '#/program/' + specific_platform + '/Crayon-Savefile-Demo-v3'
+target_prog = '#/program/' + specific_platform + '/Bloat-Creator'
 env.Depends(target_prog, lib_path + env['LIBPREFIX'] + 'CrayonSavefile' + env['LIBSUFFIX'])
 
 # !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good example",
