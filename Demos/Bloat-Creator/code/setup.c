@@ -1,7 +1,7 @@
 #include "setup.h"
 
 void savefile_defaults(){
-	uint16_t i;
+	uint32_t i;
 	for(i = 0; i < sf_vars_size; i++){
 		sf_vars[i] = 0;
 	}
@@ -40,9 +40,6 @@ uint8_t setup_savefile(crayon_savefile_details_t * details, uint32_t size){
 	error += crayon_savefile_set_long_desc(details, "Only purpose is to waste space");
 	
 	if(error){return 1;}
-
-	//Sizes: 58880, 4, 128
-	printf("Sizes: %d, %d, %d\n", size, sizeof(crayon_savefile_version_t), CRAYON_SF_HDR_SIZE);
 
 	//Remove the version number and hdr size
 	if(size > sizeof(crayon_savefile_version_t) + CRAYON_SF_HDR_SIZE){

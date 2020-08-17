@@ -398,7 +398,6 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 		(lengths[CRAYON_TYPE_SINT8] * sizeof(int8_t)) +
 		(lengths[CRAYON_TYPE_CHAR] * sizeof(char));
 
-	printf("Solidify saves update\n");
 	crayon_savefile_update_all_device_infos(details);
 	
 	//If no savefile was found, then set our save device to the first valid memcard

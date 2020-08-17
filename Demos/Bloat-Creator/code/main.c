@@ -32,7 +32,7 @@ int main(){
 
 	uint8_t mode = 0;
 
-	uint32_t size = 129 * 512;	//Seems to fail on DC if somewhere above 115...
+	uint32_t size = 5 * 512;
 	uint8_t dev_id = 0;
 
 	char buffer[500];

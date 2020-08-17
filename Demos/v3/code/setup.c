@@ -7,8 +7,9 @@ void savefile_defaults(){
 	sf_var2[0] = 5.5;
 	// sf_dunno[0] = 27;
 
-	uint16_t i;
-	// uint16_t j;
+	//Don't need 32 atm, but if adding more than 65536 vars, you're going to need this
+	uint32_t i;
+	// uint32_t j;
 	for(i = 0; i < sf_var4_length; i++){
 		sf_lol[i][0] = 2;
 

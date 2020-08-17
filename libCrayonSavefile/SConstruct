@@ -54,7 +54,7 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 		e.Append(CFLAGS = '-g')	#NOTE: This is a SCons specific function
 		e.Append(CPPDEFINES = {'CRAYON_DEBUG':1})
 
-	build_dir = '#/build/' + p + '/'
+	build_dir = 'build/' + p + '/'	#Don't put a #/ in front, that breaks stuff for some reason
 	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir
 													#duplicate=0 means it won't duplicate the src files
 
