@@ -18,7 +18,7 @@ int8_t upgrade_savefile(void **loaded_variables, crayon_savefile_version_t loade
 }
 
 uint8_t setup_savefile(crayon_savefile_details_t * details, uint32_t size){
-	uint8_t i, error;
+	uint8_t error;
 
 	#if defined(_arch_pc)
 
@@ -41,17 +41,16 @@ uint8_t setup_savefile(crayon_savefile_details_t * details, uint32_t size){
 	
 	if(error){return 1;}
 
-	#if defined(_arch_dreamcast)
-
-	size *= 512;
-
-	#endif
+	//Sizes: 58880, 4, 128
+	printf("Sizes: %d, %d, %d\n", size, sizeof(crayon_savefile_version_t), CRAYON_SF_HDR_SIZE);
 
 	//Remove the version number and hdr size
-	if(size <= sizeof(crayon_savefile_version_t) + CRAYON_SF_HDR_SIZE){
+	if(size > sizeof(crayon_savefile_version_t) + CRAYON_SF_HDR_SIZE){
 		sf_vars_size = size - sizeof(crayon_savefile_version_t) - CRAYON_SF_HDR_SIZE;
 	}
-	sf_vars_size = 1;	//Just so we don't make a MASSIVE file
+	else{
+		sf_vars_size = 1;	//Just so we don't make a MASSIVE file
+	}
 
 	//Now lets construct our history
 	crayon_savefile_add_variable(details, &sf_vars, sf_vars_type, sf_vars_size, SFV_INITIAL, VAR_STILL_PRESENT);

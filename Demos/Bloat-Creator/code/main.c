@@ -9,6 +9,8 @@
 #include "setup.h"
 #include "graphics.h"
 
+#include <math.h>
+
 
 #if defined(_arch_dreamcast)
 
@@ -30,7 +32,7 @@ int main(){
 
 	uint8_t mode = 0;
 
-	uint32_t size = 100;	//Seems to fail on DC if somewhere above 115...
+	uint32_t size = 129 * 512;	//Seems to fail on DC if somewhere above 115...
 	uint8_t dev_id = 0;
 
 	char buffer[500];
@@ -40,7 +42,7 @@ int main(){
 
 	while(mode < 2){
 		if(mode == 0){
-			sprintf(buffer, "How many blocks do you want?\n(Press A to continue)\nBlocks: %d", size);
+			sprintf(buffer, "How many blocks do you want?\n(Press A to continue)\nBlocks: %d", (uint32_t)ceil(size/512.0));
 		}
 		else if(mode == 1){
 			sprintf(buffer, "Which device id? %d", dev_id);
@@ -52,8 +54,8 @@ int main(){
 				mode++;
 			}
 			if((st->buttons & CONT_DPAD_UP) && !(previous[__dev->port] & CONT_DPAD_UP)){
-				if(mode == 0 && size < 200){
-					size++;
+				if(mode == 0 && size < 200 * 512){
+					size += 512;
 				}
 				else if(mode == 1 && dev_id < CRAYON_SF_NUM_SAVE_DEVICES - 1){
 					dev_id++;
@@ -61,7 +63,7 @@ int main(){
 			}
 			if((st->buttons & CONT_DPAD_DOWN) && !(previous[__dev->port] & CONT_DPAD_DOWN)){
 				if(mode == 0 && size > 0){
-					size--;
+					size -= 512;
 				}
 				else if(mode == 1 && dev_id > 0){
 					dev_id--;
