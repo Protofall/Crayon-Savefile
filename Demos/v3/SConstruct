@@ -21,6 +21,7 @@ lib_path = lib_folder + 'lib/' + specific_platform +'/'
 
 #Create our environments are tell it where all the lib's .h files are
 env = Environment(CPPPATH = [include_path], BUILD_DIR = 'build/' + specific_platform + '/')
+env.Append(CPPFLAGS="-fdiagnostics-color=always")
 
 target_prog = '#/program/' + specific_platform + '/Crayon-Savefile-Demo-v3'
 env.Depends(target_prog, lib_path + env['LIBPREFIX'] + 'CrayonSavefile' + env['LIBSUFFIX'])

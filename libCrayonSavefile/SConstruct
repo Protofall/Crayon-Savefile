@@ -27,6 +27,7 @@ include_path = '#/include/crayon_savefile/'
 if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	# The # symbol means relative to our working directory
 	env.append(Environment(CPPPATH = include_path, CC = 'kos-cc', AR = 'kos-ar'))
+	env[-1].Append(CPPFLAGS="-fdiagnostics-color=always")
 	env[-1]['ENV']['PATH'] = os.environ['PATH']	#Import PATH for us. This fixes the "Unable to find kos-cc" thing
 												#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
@@ -37,6 +38,7 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 from sys import platform
 if PLATFORM == 'pc' or PLATFORM == 'all':
 	env.append(Environment(CPPPATH = include_path))
+	env[-1].Append(CPPFLAGS="-fdiagnostics-color=always")
 	if platform == "linux" or platform == "linux2":
 		specific_platform.append('linux')
 	elif platform == "win32":

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h> //For the uintX_t types
+#include <inttypes.h>	//For the %"PRIu32" part of printfs
 
 #if defined(_arch_dreamcast)
 

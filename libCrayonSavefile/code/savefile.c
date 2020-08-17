@@ -414,8 +414,10 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	#if CRAYON_DEBUG == 1
 
 	printf("\n---SOLIDIFY'S ENDING STATS---\n");
-	printf("SF Size: HDR %d BODY %d\n", CRAYON_SF_HDR_SIZE, details->savedata.size);
-	printf("Version size: %ld. Savedata lengths: %d, %d, %d, %d, %d, %d, %d, %d, %d\n", sizeof(crayon_savefile_version_t),
+	printf("SF Size: HDR %d BODY %"PRIu32"\n", CRAYON_SF_HDR_SIZE, details->savedata.size);
+	//Those quotes between the two lines is to allow the string to continue as normal over multiple lines
+	printf("Version size: %u. Savedata lengths: %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32","
+		"%"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32"\n", sizeof(crayon_savefile_version_t),
 		details->savedata.lengths[0], details->savedata.lengths[1], details->savedata.lengths[2],
 		details->savedata.lengths[3], details->savedata.lengths[4], details->savedata.lengths[5],
 		details->savedata.lengths[6], details->savedata.lengths[7], details->savedata.lengths[8]);
@@ -423,9 +425,9 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	printf("Versions: ");
 	for(i = 0; i < CRAYON_SF_NUM_SAVE_DEVICES - 1; i++){
-		printf("%d, ", details->savefile_versions[i]);
+		printf("%"PRIu32", ", details->savefile_versions[i]);
 	}
-	printf("%d\n---END---\n\n", details->savefile_versions[CRAYON_SF_NUM_SAVE_DEVICES - 1]);
+	printf("%"PRIu32"\n---END---\n\n", details->savefile_versions[CRAYON_SF_NUM_SAVE_DEVICES - 1]);
 
 	#endif
 
@@ -915,7 +917,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		//The size is off, the savefile must have been tampered with
 		if(expected_size != data_length){
 			#if CRAYON_DEBUG == 1
-			printf("Deserial, wrong sizes: %d %d\n", expected_size, data_length);
+			printf("Deserial, wrong sizes: %"PRIu32" %"PRIu32"\n", expected_size, data_length);
 			#endif
 			return -1;
 		}
@@ -1051,7 +1053,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 
 		#if CRAYON_DEBUG == 1
 
-		printf("OLD v%d\n", loaded_version);
+		printf("OLD v%"PRIu32"\n", loaded_version);
 		//size update isn't needed for calculations, only to show correct value in function
 		old_savedata.size = sizeof(crayon_savefile_version_t) + (8 * old_savedata.lengths[0]) +
 		(4 * (old_savedata.lengths[1] + old_savedata.lengths[2] + old_savedata.lengths[3])) +
@@ -1079,7 +1081,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 
 	#if CRAYON_DEBUG == 1
 
-	printf("NEW v%d\n", details->latest_version);
+	printf("NEW v%"PRIu32"\n", details->latest_version);
 	__crayon_savefile_print_savedata(new_savedata);
 	printf("\n");
 
@@ -1172,10 +1174,10 @@ void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata){
 
 	printf("LENGTHS\n");
 	for(i = 0; i < CRAYON_NUM_TYPES; i++){
-		printf("%d, ", savedata->lengths[i]);
+		printf("%"PRIu32", ", savedata->lengths[i]);
 	}
 	printf("\n");
-	printf("SIZE: %d\n\n", savedata->size);
+	printf("SIZE: %"PRIu32"\n\n", savedata->size);
 
 	printf("Double\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_DOUBLE]; i++){
@@ -1191,37 +1193,37 @@ void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata){
 
 	printf("u32\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_UINT32]; i++){
-		printf("%d, ", savedata->u32[i]);
+		printf("%"PRIu32", ", savedata->u32[i]);
 	}
 	printf("\n");
 
 	printf("s32\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_SINT32]; i++){
-		printf("%d, ", savedata->s32[i]);
+		printf("%"PRId32", ", savedata->s32[i]);
 	}
 	printf("\n");
 
 	printf("u16\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_UINT16]; i++){
-		printf("%d, ", savedata->u16[i]);
+		printf("%"PRIu16", ", savedata->u16[i]);
 	}
 	printf("\n");
 
 	printf("s16\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_SINT16]; i++){
-		printf("%d, ", savedata->s16[i]);
+		printf("%"PRId16", ", savedata->s16[i]);
 	}
 	printf("\n");
 
 	printf("u8\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_UINT8]; i++){
-		printf("%d, ", savedata->u8[i]);
+		printf("%"PRIu8", ", savedata->u8[i]);
 	}
 	printf("\n");
 
 	printf("s8\n");
 	for(i = 0; i < savedata->lengths[CRAYON_TYPE_SINT8]; i++){
-		printf("%d, ", savedata->s8[i]);
+		printf("%"PRId8", ", savedata->s8[i]);
 	}
 	printf("\n");
 
