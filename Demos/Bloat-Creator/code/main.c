@@ -99,7 +99,7 @@ int main(){
 	savefile_details.save_device_id = dev_id;
 
 	int8_t save_error = 1;
-	if(savefile_details.present_devices && !setup_res){
+	if(!setup_res){
 		save_error = crayon_savefile_save_savedata(&savefile_details);
 	}
 
@@ -114,7 +114,7 @@ int main(){
 	#endif
 
 	sprintf(buffer, "Save error %d, %d. Size: %d\n Bitmaps: %d, %d, %d", save_error, setup_res, true_size,
-		savefile_details.present_devices, savefile_details.present_savefiles, savefile_details.current_savefiles);
+		savefile_details.present_devices, savefile_details.present_savefiles, savefile_details.upgradable_to_current);
 
 	printf("%s", buffer);
 

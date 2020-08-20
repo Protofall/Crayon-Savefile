@@ -69,7 +69,7 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 	//Will be set later
 	details->present_devices = 0;
 	details->present_savefiles = 0;
-	details->current_savefiles = 0;
+	details->upgradable_to_current = 0;
 	for(i = 0; i < CRAYON_SF_NUM_SAVE_DEVICES; i++){
 		details->savefile_versions[i] = 0;
 	}
@@ -401,10 +401,14 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	crayon_savefile_update_all_device_infos(details);
 	
 	//If no savefile was found, then set our save device to the first valid memcard
+	int8_t status;
 	uint8_t i;
 	if(details->save_device_id == -1){
 		for(i = 0; i < CRAYON_SF_NUM_SAVE_DEVICES; i++){
-			if(crayon_savefile_get_device_bit(details->present_devices, i)){
+
+			status = crayon_savefile_save_device_status(details, i);
+			if(status == CRAYON_SF_STATUS_CURRENT_SF || status == CRAYON_SF_STATUS_OLD_SF_ROOM ||
+				status == CRAYON_SF_STATUS_NO_SF_ROOM){
 				details->save_device_id = i;
 				break;
 			}
@@ -421,7 +425,8 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 		details->savedata.lengths[0], details->savedata.lengths[1], details->savedata.lengths[2],
 		details->savedata.lengths[3], details->savedata.lengths[4], details->savedata.lengths[5],
 		details->savedata.lengths[6], details->savedata.lengths[7], details->savedata.lengths[8]);
-	printf("Bitmaps: %d, %d, %d\n", details->present_devices, details->present_savefiles, details->current_savefiles);
+	printf("Bitmaps: %d, %d, %d\n", details->present_devices, details->present_savefiles,
+		details->upgradable_to_current);
 
 	printf("Versions: ");
 	for(i = 0; i < CRAYON_SF_NUM_SAVE_DEVICES - 1; i++){
@@ -435,9 +440,10 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 }
 
 int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
-	//Device isn't present or no savefile present, then they'res nothing to load
-	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id) ||
-		!crayon_savefile_get_device_bit(details->present_savefiles, details->save_device_id)){
+	//Only proceed if we can do something here
+	int8_t status = crayon_savefile_save_device_status(details, details->save_device_id);
+	if(status != CRAYON_SF_STATUS_CURRENT_SF && status != CRAYON_SF_STATUS_OLD_SF_ROOM &&
+		status != CRAYON_SF_STATUS_NO_SF_ROOM){
 		printf("Test1\n");
 		return -1;
 	}
@@ -531,8 +537,10 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 }
 
 int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
-	//Device isn't present, can't do anything with it
-	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
+	//Only proceed if we can actually save
+	int8_t status = crayon_savefile_save_device_status(details, details->save_device_id);
+	if(status != CRAYON_SF_STATUS_CURRENT_SF && status != CRAYON_SF_STATUS_OLD_SF_ROOM &&
+		status != CRAYON_SF_STATUS_NO_SF_ROOM){
 		return -1;
 	}
 
@@ -650,7 +658,8 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	#endif
 
 	crayon_savefile_set_device_bit(&details->present_savefiles, details->save_device_id);
-	crayon_savefile_set_device_bit(&details->current_savefiles, details->save_device_id);
+	crayon_savefile_set_device_bit(&details->upgradable_to_current, details->save_device_id);
+	details->savefile_versions[details->save_device_id] = details->latest_version;	//Is this line needed?
 
 	return 0;
 }
@@ -729,6 +738,43 @@ void crayon_savefile_free_base_path(){
 	}
 
 	return;
+}
+
+int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, int8_t save_device_id){
+	if(save_device_id < 0 || save_device_id >= CRAYON_SF_NUM_SAVE_DEVICES){
+		return -1;
+	}
+
+	//Get the right bits
+	uint8_t present_device = details->present_devices & (1 << save_device_id);
+	uint8_t present_savefile = details->present_savefiles & (1 << save_device_id);
+	uint8_t upgradable_to_current = details->upgradable_to_current & (1 << save_device_id);
+	crayon_savefile_version_t version = details->savefile_versions[save_device_id];
+
+	if(!present_device){
+		return CRAYON_SF_STATUS_NO_DEVICE;
+	}
+	else if(!present_savefile){
+		if(upgradable_to_current){
+			return CRAYON_SF_STATUS_NO_SF_ROOM;
+		}
+		return CRAYON_SF_STATUS_NO_SF_FULL;
+	}
+	else if(version > details->latest_version){
+		return CRAYON_SF_STATUS_FUTURE_SF;
+	}
+	else if(version == details->latest_version){
+		return CRAYON_SF_STATUS_CURRENT_SF;
+	}
+	else if(version < details->latest_version && version != 0){
+		if(upgradable_to_current){
+			return CRAYON_SF_STATUS_OLD_SF_ROOM;
+		}
+		return CRAYON_SF_STATUS_OLD_SF_FULL;
+	}
+	else{	//If all of the above failed, the savefile must be invalid
+		return CRAYON_SF_STATUS_INVALID_SF;
+	}
 }
 
 uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id){
@@ -1367,7 +1413,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 	//We start by assuming it fails all conditions
 	details->present_devices &= ~(1 << save_device_id);
 	details->present_savefiles &= ~(1 << save_device_id);
-	details->current_savefiles &= ~(1 << save_device_id);
+	details->upgradable_to_current &= ~(1 << save_device_id);
 
 	FILE *fp;
 
@@ -1385,23 +1431,31 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		return -1;
 	}
 
+	//Any device thats present gets set
+	crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
+
 	//Returns 0 if fine
 	//If check threw an error, either it failed to construct the path string, open the file
 	//Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
 	//So if the savefile does exist, then we say the device isn't present, else we check for space and see
 	if(crayon_savefile_check_savedata(details, save_device_id)){
+		printf("ENTERED\n");
 		//Calculate the size of the savefile to make sure if we have enough space
 		fp = fopen(savename, "rb");
 		free(savename);
 		if(!fp){	//This usually means the file doesn't exist
+			printf("HELLO\n");
 			//Can't use details->savedata.size, doesn't include hdr and stuff
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_devices_free_space(save_device_id)){
-				crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
+				printf("HELLO 2\n");
+				crayon_savefile_set_device_bit(&details->upgradable_to_current, save_device_id);
 			}
 		}
 		else{	//File does exist, so it must be invalid if check failed
-			//We don't even set "present_savefiles" since the savefile is possibly corrupted
+			printf("BYE\n");
+			//We set present savefiles, even for invalid saves
+			crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 			fclose(fp);
 		}
 	}
@@ -1415,10 +1469,10 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 
 		if(details->savefile_versions[save_device_id] == details->latest_version){
-			crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
-			crayon_savefile_set_device_bit(&details->current_savefiles, save_device_id);
+			crayon_savefile_set_device_bit(&details->upgradable_to_current, save_device_id);
 		}
-		else if(details->savefile_versions[save_device_id] < details->latest_version){
+		else if(details->savefile_versions[save_device_id] != 0 &&
+			details->savefile_versions[save_device_id] < details->latest_version){
 			fp = fopen(savename, "rb");
 			free(savename);
 			if(!fp){	//Shouldn't occur
@@ -1441,11 +1495,10 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_devices_free_space(save_device_id) + savefile_size){
-				crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
+				crayon_savefile_set_device_bit(&details->upgradable_to_current, save_device_id);
 			}
 		}
-		//If the version is greater, then we just leave it alone and say the device isn't present
-		//and ofc savefile not current
+		//Future and "zero" version savefiles are always not upgradable.
 	}
 
 	return 0;

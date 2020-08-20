@@ -27,8 +27,9 @@ include_path = '#/include/crayon_savefile/'
 if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	# The # symbol means relative to our working directory
 	env.append(Environment(CPPPATH = include_path, CC = 'kos-cc', AR = 'kos-ar'))
-	env[-1]['ENV']['PATH'] = os.environ['PATH']	#Import PATH for us. This fixes the "Unable to find kos-cc" thing
-												#You could just add "ENV = os.environ" to the constructor instead
+
+	env[-1].AppendENVPath('PATH', [os.environ['PATH']]) #Fixes the "Unable to find kos-cc" thing
+														#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
 	env[-1]['LIBPREFIX'] = 'lib'	#Making sure we use the right prefix and suffix
 	env[-1]['LIBSUFFIX'] = '.a'
@@ -37,6 +38,9 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 from sys import platform
 if PLATFORM == 'pc' or PLATFORM == 'all':
 	env.append(Environment(CPPPATH = include_path))
+	env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
+																	#does colour for terminals and scons is just
+																	#an "output")
 	if platform.startswith('linux') == True:
 		specific_platform.append('linux')
 	elif platform == "win32":
@@ -49,13 +53,10 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 
 #Create our library/s
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
-	e.Append(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only does colour for
-													#terminals and scons is just an "output")
-
 	#Add in some cflags if in debug mode
 	if DEBUG == True:
-		e.Append(CPPFLAGS = ['-g'])	#NOTE: This is a SCons specific function
-		e.Append(CPPDEFINES = {'CRAYON_DEBUG':1})
+		e.AppendUnique(CPPFLAGS = ['-g'])
+		e.AppendUnique(CPPDEFINES = [{'CRAYON_DEBUG':1}])
 
 	build_dir = 'build/' + p + '/'	#Don't put a #/ in front, that breaks stuff for some reason
 	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir

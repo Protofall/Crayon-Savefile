@@ -120,10 +120,10 @@ typedef struct crayon_savefile_details{
 	char *strings[CRAYON_SF_NUM_DETAIL_STRINGS];
 
 	//The following 3 variables are bitmaps
-	uint8_t present_devices;	//Shows any device thats present that has enough space to save too
-								//(Unless there's a savefile newer than latest present)
-	uint8_t present_savefiles;	//Shows any device with any savefile from any version
-	uint8_t current_savefiles;	//Only shows savefiles in the current version
+	uint8_t present_devices;		//Any savefile device detected regardless of present save
+	uint8_t present_savefiles;		//Any savefile present, regardless of version or valid-ness
+	uint8_t upgradable_to_current;	//Any savefile from current or previous version
+
 	crayon_savefile_version_t savefile_versions[CRAYON_SF_NUM_SAVE_DEVICES];	//Stores the savefiles versions
 																				//Zero is not-valid/present
 
@@ -225,12 +225,30 @@ void crayon_savefile_free(crayon_savefile_details_t *details);
 
 void crayon_savefile_free_base_path();
 
-//This will get the boolean flag for present device, present savefile and current savefile for any device
-uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
+
+
+
+//MOVE THE ABOVE FUNCTION TO INTERNAL STUFF SINCE ONE OF THESE USER FUNCTIONS WILL HANDLE MOST OF THE BITMAPS FOR US
+
+
+
+//Will return one of the status of the device
+#define CRAYON_SF_STATUS_NO_DEVICE 0
+#define CRAYON_SF_STATUS_INVALID_SF 1	//When savefile version is zero
+#define CRAYON_SF_STATUS_NO_SF_FULL 2
+#define CRAYON_SF_STATUS_NO_SF_ROOM 3
+#define CRAYON_SF_STATUS_OLD_SF_FULL 4
+#define CRAYON_SF_STATUS_OLD_SF_ROOM 5
+#define CRAYON_SF_STATUS_CURRENT_SF 6
+#define CRAYON_SF_STATUS_FUTURE_SF 7
+int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, int8_t save_device_id);
 
 
 //---------------------Internal stuff that the user should have to touch------------------------
 
+
+//This will get the boolean flag for present device, present savefile and current savefile for any device
+uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id);
 
 //Basically get/setting bits from a bitmap
 	//I wish I could make this and the getter inlines, but GCC refuses to let me do it :(

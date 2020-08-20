@@ -31,10 +31,11 @@ int main(){
 	#endif
 
 	//Try and load savefile
-	int8_t load_error = crayon_savefile_load_savedata(&savefile_details);	//If a savefile DNE this fails
 
 	int8_t save_error = 1;
-	if(savefile_details.present_devices){
+	int8_t load_error = 1;
+	if(!setup_res){
+		load_error = crayon_savefile_load_savedata(&savefile_details);	//If a savefile DNE this fails
 		save_error = crayon_savefile_save_savedata(&savefile_details);
 	}
 
@@ -52,7 +53,7 @@ int main(){
 	sprintf(buffer2, "save_error: %d. load_error %d\n", save_error, load_error);
 	strcat(buffer, buffer2);
 	sprintf(buffer2, "bitmaps: %d, %d, %d\n", savefile_details.present_devices,
-		savefile_details.present_savefiles, savefile_details.current_savefiles);
+		savefile_details.present_savefiles, savefile_details.upgradable_to_current);
 	strcat(buffer, buffer2);
 
 	printf("%s", buffer);
