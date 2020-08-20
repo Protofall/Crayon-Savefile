@@ -243,6 +243,9 @@ void crayon_savefile_free_base_path();
 #define CRAYON_SF_STATUS_FUTURE_SF 7
 int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, int8_t save_device_id);
 
+//To quickly check if you can use a device for a current savefile. Returns 1 if yes, 0 if false
+uint8_t crayon_savefile_is_device_ready(crayon_savefile_details_t *details, int8_t save_device_id);
+
 
 //---------------------Internal stuff that the user should have to touch------------------------
 

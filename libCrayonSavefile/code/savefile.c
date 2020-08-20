@@ -777,6 +777,15 @@ int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, in
 	}
 }
 
+uint8_t crayon_savefile_is_device_ready(crayon_savefile_details_t *details, int8_t save_device_id){
+	int8_t status = crayon_savefile_save_device_status(details, save_device_id);
+	if(status != CRAYON_SF_STATUS_CURRENT_SF && status != CRAYON_SF_STATUS_OLD_SF_ROOM &&
+		status != CRAYON_SF_STATUS_NO_SF_ROOM){
+		return 0;
+	}
+	return 1;
+}
+
 uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_device_id){
 	return (device_bitmap >> save_device_id) & 1;
 }
