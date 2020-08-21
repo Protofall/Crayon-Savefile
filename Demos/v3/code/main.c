@@ -31,7 +31,6 @@ int main(){
 	#endif
 
 	//Try and load savefile
-
 	int8_t save_error = 1;
 	int8_t load_error = 1;
 	if(!setup_res){
@@ -39,7 +38,7 @@ int main(){
 		save_error = crayon_savefile_save_savedata(&savefile_details);
 	}
 
-	char buffer[500];
+	char buffer[400];	//Currently around 254 chars
 	uint32_t bytes = crayon_savefile_get_savefile_size(&savefile_details);
 	if(!setup_res){
 		sprintf(buffer, "Save initialised.\n%d bytes, %d blocks (DC)\n", bytes, 
@@ -50,11 +49,28 @@ int main(){
 	}
 
 	char buffer2[50];
-	sprintf(buffer2, "save_error: %d. load_error %d\n", save_error, load_error);
+	sprintf(buffer2, "Save_error: %d. Load_error %d\n", save_error, load_error);
 	strcat(buffer, buffer2);
-	sprintf(buffer2, "bitmaps: %d, %d, %d\n", savefile_details.present_devices,
+	sprintf(buffer2, "Bitmaps: %d, %d, %d\n", savefile_details.present_devices,
 		savefile_details.present_savefiles, savefile_details.upgradable_to_current);
 	strcat(buffer, buffer2);
+	
+	sprintf(buffer2, "Versions: ");
+	strcat(buffer, buffer2);
+	uint8_t i;
+	for(i = 0; i < CRAYON_SF_NUM_SAVE_DEVICES; i++){
+		sprintf(buffer2, "%"PRIu32", ", savefile_details.savefile_versions[i]);
+		strcat(buffer, buffer2);
+	}
+	strcat(buffer, "\n");
+
+	sprintf(buffer2, "Status: ");
+	strcat(buffer, buffer2);
+	for(i = 0; i < CRAYON_SF_NUM_SAVE_DEVICES; i++){
+		sprintf(buffer2, "%d, ", crayon_savefile_save_device_status(&savefile_details, i));
+		strcat(buffer, buffer2);
+	}
+	strcat(buffer, "\n");
 
 	printf("%s", buffer);
 

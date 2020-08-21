@@ -740,6 +740,18 @@ void crayon_savefile_free_base_path(){
 	return;
 }
 
+int8_t crayon_savefile_set_device(crayon_savefile_details_t *details, int8_t save_device_id){
+	if(save_device_id < 0 || save_device_id >= CRAYON_SF_NUM_SAVE_DEVICES){
+		return -1;
+	}
+
+	if(crayon_savefile_is_device_ready(details, save_device_id)){
+		details->save_device_id = save_device_id;
+		return 0;
+	}
+	return -1;
+}
+
 int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, int8_t save_device_id){
 	if(save_device_id < 0 || save_device_id >= CRAYON_SF_NUM_SAVE_DEVICES){
 		return -1;

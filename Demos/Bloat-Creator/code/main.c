@@ -35,7 +35,7 @@ int main(){
 	uint32_t size = 5 * 512;
 	uint8_t dev_id = 0;
 
-	char buffer[500];
+	char buffer[300];
 	uint32_t previous[4] = {0};
 
 	#if defined(_arch_dreamcast)
@@ -96,25 +96,30 @@ int main(){
 	uint8_t setup_res = setup_savefile(&savefile_details, size);
 
 	//Set the device id, even if we can't use that device
-	savefile_details.save_device_id = dev_id;
-
-	int8_t save_error = 1;
-	if(!setup_res){
-		save_error = crayon_savefile_save_savedata(&savefile_details);
+	// savefile_details.save_device_id = dev_id;
+	if(crayon_savefile_set_device(&savefile_details, dev_id) == -1){
+		sprintf(buffer, "Unable to save to the requested device\n");
 	}
+	else{
 
-	#if defined(_arch_dreamcast)
+		int8_t save_error = 1;
+		if(!setup_res){
+			save_error = crayon_savefile_save_savedata(&savefile_details);
+		}
 
-	uint32_t true_size = crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details));
+		#if defined(_arch_dreamcast)
 
-	#else
+		uint32_t true_size = crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details));
 
-	uint32_t true_size = size;
+		#else
 
-	#endif
+		uint32_t true_size = size;
 
-	sprintf(buffer, "Save error %d, %d. Size: %d\n Bitmaps: %d, %d, %d", save_error, setup_res, true_size,
-		savefile_details.present_devices, savefile_details.present_savefiles, savefile_details.upgradable_to_current);
+		#endif
+
+		sprintf(buffer, "Save error %d, %d. Size: %d\n Bitmaps: %d, %d, %d", save_error, setup_res, true_size,
+			savefile_details.present_devices, savefile_details.present_savefiles, savefile_details.upgradable_to_current);
+	}
 
 	printf("%s", buffer);
 

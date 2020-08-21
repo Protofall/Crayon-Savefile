@@ -225,12 +225,8 @@ void crayon_savefile_free(crayon_savefile_details_t *details);
 
 void crayon_savefile_free_base_path();
 
-
-
-
-//MOVE THE ABOVE FUNCTION TO INTERNAL STUFF SINCE ONE OF THESE USER FUNCTIONS WILL HANDLE MOST OF THE BITMAPS FOR US
-
-
+//This will let you choose a device for saving/loading. Will fail if you can't save/load to the device
+int8_t crayon_savefile_set_device(crayon_savefile_details_t *details, int8_t save_device_id);
 
 //Will return one of the status of the device
 #define CRAYON_SF_STATUS_NO_DEVICE 0
