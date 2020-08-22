@@ -19,6 +19,7 @@ KOS_INIT_ROMDISK(romdisk_boot);
 #endif
 
 int main(){
+	
 	#if defined(_arch_dreamcast)
 	
 	pvr_init_defaults();	//Init kos
@@ -109,8 +110,8 @@ int main(){
 	char buffer2[50];
 	sprintf(buffer2, "Save_error: %d. Load_error %d\n", save_error, load_error);
 	strcat(buffer, buffer2);
-	sprintf(buffer2, "Bitmaps: %d, %d, %d\n", savefile_details.present_devices,
-		savefile_details.present_savefiles, savefile_details.upgradable_to_current);
+	sprintf(buffer2, "Bitmaps: %d, %d, %d. Dev ID: %d\n", savefile_details.present_devices,
+		savefile_details.present_savefiles, savefile_details.upgradable_to_current, savefile_details.save_device_id);
 	strcat(buffer, buffer2);
 	
 	sprintf(buffer2, "Versions: ");

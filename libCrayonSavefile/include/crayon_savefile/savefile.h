@@ -226,6 +226,7 @@ void crayon_savefile_free(crayon_savefile_details_t *details);
 void crayon_savefile_free_base_path();
 
 //This will let you choose a device for saving/loading. Will fail if you can't save/load to the device
+	//If invalid, it will set the device to -1
 int8_t crayon_savefile_set_device(crayon_savefile_details_t *details, int8_t save_device_id);
 
 //Will return one of the status of the device

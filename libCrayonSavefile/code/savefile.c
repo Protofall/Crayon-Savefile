@@ -742,6 +742,7 @@ void crayon_savefile_free_base_path(){
 
 int8_t crayon_savefile_set_device(crayon_savefile_details_t *details, int8_t save_device_id){
 	if(save_device_id < 0 || save_device_id >= CRAYON_SF_NUM_SAVE_DEVICES){
+		details->save_device_id = -1;
 		return -1;
 	}
 
@@ -749,6 +750,7 @@ int8_t crayon_savefile_set_device(crayon_savefile_details_t *details, int8_t sav
 		details->save_device_id = save_device_id;
 		return 0;
 	}
+	details->save_device_id = -1;
 	return -1;
 }
 

@@ -98,7 +98,7 @@ int main(){
 	//Set the device id, even if we can't use that device
 	// savefile_details.save_device_id = dev_id;
 	if(crayon_savefile_set_device(&savefile_details, dev_id) == -1){
-		sprintf(buffer, "Unable to save to the requested device\n");
+		sprintf(buffer, "Unable to save to the requested\ndevice");
 	}
 	else{
 
@@ -117,7 +117,7 @@ int main(){
 
 		#endif
 
-		sprintf(buffer, "Save error %d, %d. Size: %d\n Bitmaps: %d, %d, %d", save_error, setup_res, true_size,
+		sprintf(buffer, "Save error %d, %d. Size: %d\nBitmaps: %d, %d, %d", save_error, setup_res, true_size,
 			savefile_details.present_devices, savefile_details.present_savefiles, savefile_details.upgradable_to_current);
 	}
 
