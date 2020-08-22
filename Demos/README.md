@@ -1,6 +1,6 @@
 # Version differences
 
-There are two main programs. The bloat creator (Something seperate) and a savefile demo that changes over the versions. We have a copy of the savefile program for each version of our savefile. Do note for sizes, KOS currently treats doubles the same as floats, so doubles are actually 4 bytes each. The size of the header on PC is 32 bytes and its `X` bytes on Dreamcast. 512 bytes on Dreamcast is 1 Block.
+There are two main programs. The bloat creator (Something seperate) and a savefile demo that changes over the versions. We have a copy of the savefile program for each version of our savefile. Do note for sizes, KOS currently treats doubles the same as floats, so doubles are actually 4 bytes each. The size of the header on PC is 32 bytes and its 128 bytes on Dreamcast. 512 bytes on Dreamcast is 1 Block. The dreamcast also has savefile icons and "eyecatcher" icons. SF icons are 1 block per frame (3 frames max) and eye catchers are 4 blocks at smallest (See the Crayon Utilities repository for more information)
 
 ### v1
 
@@ -23,7 +23,7 @@ Note that `var4` doesn't exist in the normal sense, think of it as a struct that
 - 160 chars
 
 Sizes:
-- Dreamcast: -
+- Dreamcast: 8 Blocks
 - PC: 293 Bytes
 
 ### v2
@@ -46,7 +46,7 @@ So now our total vars are
 - 160 chars
 
 Sizes:
-- Dreamcast: -
+- Dreamcast: 9 Blocks
 - PC: 822 Bytes
 
 ### v3
@@ -69,5 +69,5 @@ Total vars
 - 160 chars
 
 Sizes:
-- Dreamcast: -
+- Dreamcast: 8 Blocks
 - PC: 244 Bytes

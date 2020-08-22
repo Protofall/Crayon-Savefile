@@ -19,7 +19,6 @@ KOS_INIT_ROMDISK(romdisk_boot);
 #endif
 
 int main(){
-
 	#if defined(_arch_dreamcast)
 	
 	pvr_init_defaults();	//Init kos
