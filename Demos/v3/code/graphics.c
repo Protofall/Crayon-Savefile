@@ -2,8 +2,6 @@
 
 #ifdef _arch_dreamcast
 void font_init(){
-	// crayon_memory_mount_romdisk("/cd/sf_icon.img", "/Save");
-
 	int i, x, y, c;
 	unsigned short * temp_tex;
 
@@ -46,8 +44,6 @@ void font_init(){
 
 	free(wfont);
 	free(temp_tex);
-
-	// fs_romdisk_unmount("/Save");
 }
 
 void draw_char(float x1, float y1, float z1, uint8_t a, uint8_t r, uint8_t g, uint8_t b, int c, float xs, float ys){
