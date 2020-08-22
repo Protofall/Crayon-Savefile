@@ -19,9 +19,6 @@ KOS_INIT_ROMDISK(romdisk_boot);
 #endif
 
 int main(){
-	crayon_savefile_details_t savefile_details;
-
-	uint8_t setup_res = setup_savefile(&savefile_details);
 
 	#if defined(_arch_dreamcast)
 	
@@ -30,18 +27,73 @@ int main(){
 	
 	#endif
 
+	char buffer[400];	//Currently around 254 chars are used
+	int8_t dev_id = 0;
+	uint32_t previous[4] = {0};
+
+	#if defined(_arch_dreamcast)
+
+	uint8_t end = 0;
+	while(!end){
+		sprintf(buffer, "What save device do you want to use?\nPress up or down on D-PAD: %d", dev_id);
+
+		pvr_wait_ready();
+		MAPLE_FOREACH_BEGIN(MAPLE_FUNC_CONTROLLER, cont_state_t, st)
+			if((st->buttons & CONT_A) && !(previous[__dev->port] & CONT_A)){
+				end = 1;
+				break;
+			}
+			if((st->buttons & CONT_DPAD_UP) && !(previous[__dev->port] & CONT_DPAD_UP)){
+				if(dev_id < CRAYON_SF_NUM_SAVE_DEVICES - 1){
+					dev_id++;
+				}
+			}
+			if((st->buttons & CONT_DPAD_DOWN) && !(previous[__dev->port] & CONT_DPAD_DOWN)){
+				if(dev_id > 0){
+					dev_id--;
+				}
+			}
+			
+			previous[__dev->port] = st->buttons;
+
+		MAPLE_FOREACH_END()
+
+		pvr_scene_begin();
+
+		pvr_list_begin(PVR_LIST_TR_POLY);
+
+			draw_string(30, 30, 1, 255, 255, 216, 0, buffer, 2, 2);
+		
+		pvr_list_finish();
+
+
+		pvr_scene_finish();
+	}
+
+	#else
+
+	printf("Which device do you want to save to (Max is %d)?\n", CRAYON_SF_NUM_SAVE_DEVICES - 1);
+	scanf("%d", &size);
+
+	#endif
+
+
+	crayon_savefile_details_t savefile_details;
+
+	uint8_t setup_res = setup_savefile(&savefile_details);
+
 	//Try and load savefile
 	int8_t save_error = 1;
 	int8_t load_error = 1;
 	if(!setup_res){
+		crayon_savefile_set_device(&savefile_details, dev_id);
 		load_error = crayon_savefile_load_savedata(&savefile_details);	//If a savefile DNE this fails
 		save_error = crayon_savefile_save_savedata(&savefile_details);
 	}
 
-	char buffer[400];	//Currently around 254 chars
 	uint32_t bytes = crayon_savefile_get_savefile_size(&savefile_details);
 	if(!setup_res){
-		sprintf(buffer, "Save initialised.\n%d bytes, %d blocks (DC)\n", bytes, 
+		sprintf(buffer, "Save initialised.\n%"PRIu32" bytes, %d blocks (DC)\n", bytes, 
 			crayon_savefile_bytes_to_blocks(bytes));
 	}
 	else{
@@ -76,7 +128,7 @@ int main(){
 
 	#if defined(_arch_dreamcast)
 
-	uint8_t end = 0;
+	end = 0;
 	while(!end){
 		pvr_wait_ready();
 		MAPLE_FOREACH_BEGIN(MAPLE_FUNC_CONTROLLER, cont_state_t, st)
