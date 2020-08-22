@@ -6,11 +6,7 @@ uint8_t crayon_misc_is_big_endian(){
 }
 
 void crayon_misc_endian_correction(uint8_t *buffer, size_t bytes){
-	#if CRAYON_DEBUG == 1
-	
-	printf("ENDIANESS CORRECTOR INCOMPLETE\n");
-	
-	#endif
+	;
 
 	return;
 }

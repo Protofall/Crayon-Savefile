@@ -140,7 +140,6 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 
 	//Since BIOS can't render more than 3 for some reason
 	if(icon_anim_count > 3){
-		printf("help1\n");
 		return -1;
 	}
 
@@ -148,7 +147,6 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	uint32_t size;
 
 	if(!fp){
-		printf("help2\n");
 		return -1;
 	}
 
@@ -158,7 +156,6 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	fseek(fp, 0, SEEK_SET);
 
 	if(!(details->icon_data = malloc(size))){
-		printf("help3\n");
 		fclose(fp);
 		return -1;
 	}
@@ -170,7 +167,6 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	//--------------------------------
 
 	if(!(fp = fopen(palette, "rb"))){
-		printf("help4\n");
 		return -1;
 	}
 
@@ -179,7 +175,6 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	fseek(fp, 0, SEEK_SET);
 
 	if(!(details->icon_palette = malloc(size))){
-		printf("help5\n");
 		fclose(fp);
 		return -1;
 	}
@@ -444,23 +439,18 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	int8_t status = crayon_savefile_save_device_status(details, details->save_device_id);
 	if(status != CRAYON_SF_STATUS_CURRENT_SF && status != CRAYON_SF_STATUS_OLD_SF_ROOM &&
 		status != CRAYON_SF_STATUS_NO_SF_ROOM){
-		printf("Test1\n");
 		return -1;
 	}
 
 	char *savename = crayon_savefile_get_full_path(details, details->save_device_id);
 	if(!savename){
-		printf("Test2\n");
 		return -1;
 	}
-
-	printf("LOAD PATH: %s\n", savename);
 
 	//If the savefile DNE somehow, this will fail
 	FILE *fp = fopen(savename, "rb");
 	free(savename);
 	if(!fp){
-		printf("Test3\n");
 		return -1;
 	}
 
@@ -471,14 +461,11 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	uint8_t *data = malloc(pkg_size);
 	if(!data){
 		fclose(fp);
-		printf("Test4\n");
 		return -1;
 	}
 
 	fread(data, pkg_size, 1, fp);
 	fclose(fp);
-
-	printf("TESTER0\n");
 
 	#if defined(_arch_dreamcast)
 
@@ -509,26 +496,19 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	//(The later should never trigger if you use this library right)
 	if(strcmp(hdr.app_id, details->strings[CRAYON_SF_STRING_APP_ID])){
 		free(data);
-		printf("Test5\n");
 		return -1;
 	}
-
-	printf("TESTER1\n");
 
 	//Read the pkg data into my struct
 	//We use CRAYON_SF_HDR_SIZE to skip the header
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, data + CRAYON_SF_HDR_SIZE,
 		pkg_size - CRAYON_SF_HDR_SIZE);
 
-	printf("TESTER2\n");
-
 	#else
 
 		#error "UNSUPPORTED ARCH"
 
 	#endif
-
-	printf("Test6 %d\n", deserialise_result);
 
 	//NOTE: We don't set the current_savefile bit even if the load was successful since the saved save is still old
 
@@ -943,16 +923,9 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 	data_length -= sizeof(crayon_savefile_version_t);
 
 	//We'll also need to check if the version number is valid
-	if(loaded_version > details->latest_version){
-		printf("SAVEFILE TOO NEW\n");
+	if(loaded_version > details->latest_version || loaded_version == 0){
 		return -1;
 	}
-	else if(loaded_version == 0){
-		printf("CAN'T HAVE SAVEFILE OF VERSION ZERO\n");
-		return -1;
-	}
-
-	// printf("loaded_version %d\n", loaded_version);
 
 	//If its an older savefile, put it in the crayon_savefile_data_t format, make that union pointer array
 	//and call the user's upgrade function
@@ -986,7 +959,9 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 		//The size is off, the savefile must have been tampered with
 		if(expected_size != data_length){
 			#if CRAYON_DEBUG == 1
+
 			printf("Deserial, wrong sizes: %"PRIu32" %"PRIu32"\n", expected_size, data_length);
+			
 			#endif
 			return -1;
 		}
@@ -1462,21 +1437,17 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 	//Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
 	//So if the savefile does exist, then we say the device isn't present, else we check for space and see
 	if(crayon_savefile_check_savedata(details, save_device_id)){
-		printf("ENTERED\n");
 		//Calculate the size of the savefile to make sure if we have enough space
 		fp = fopen(savename, "rb");
 		free(savename);
 		if(!fp){	//This usually means the file doesn't exist
-			printf("HELLO\n");
 			//Can't use details->savedata.size, doesn't include hdr and stuff
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_devices_free_space(save_device_id)){
-				printf("HELLO 2\n");
 				crayon_savefile_set_device_bit(&details->upgradable_to_current, save_device_id);
 			}
 		}
 		else{	//File does exist, so it must be invalid if check failed
-			printf("BYE\n");
 			//We set present savefiles, even for invalid saves
 			crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 			fclose(fp);
