@@ -1,0 +1,43 @@
+#Trying to get the program to "just compile" on PC right now
+
+#Create an environment with Crayon Savefile's include folder
+lib_folder = '../../libCrayonSavefile/'
+include_path = lib_folder + 'include/'
+
+#Get the specific platform name (For PC)
+from sys import platform
+if platform.startswith('linux') == True:
+	specific_platform = 'linux'
+elif platform == "win32":
+	specific_platform = 'windows'
+elif platform == "darwin":
+	specific_platform = 'mac'
+else:
+	print "Platform \"" + platform + "\" isn't supported."
+	exit(1)
+
+#The path to the actual lib
+lib_path = lib_folder + 'lib/' + specific_platform +'/'
+
+#Create our environments are tell it where all the lib's .h files are
+env = Environment(CPPPATH = [include_path], BUILD_DIR = 'build/' + specific_platform + '/')
+env.AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC since DC's old GCC doesn't know this
+
+target_prog = '#/program/' + specific_platform + '/Crayon-Savefile-Demo-v2'
+env.Depends(target_prog, lib_path + env['LIBPREFIX'] + 'CrayonSavefile' + env['LIBSUFFIX'])
+
+#Debug stuff
+# env.AppendUnique(CPPFLAGS = ['-g'])
+
+# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good example",
+#this part right here is NOT the best practice. What you should actually do is have an SConscript file in #/code/
+#and call it with variant_dir parameter set to $BUILD_DIR. Then that script contains the code below this VariantDir
+#call. The way its currently setup can be confusing and error-prone. The reasons I'm not doing that here is because
+#I want everything in one file and people might be confused why an SConscript file is in their code folder, so this
+#way people can just see this SConstruct file and know "That's the build file"
+env.VariantDir('$BUILD_DIR', '#/code/', duplicate = 0)
+
+#Create the objects and program, then copy the program to the program folder
+src_files = env.Glob('$BUILD_DIR/*.c')
+program_dir = 'program/' + specific_platform + '/'
+program_file = env.Program(target = target_prog, source = src_files, LIBS = ['CrayonSavefile'], LIBPATH = lib_path)

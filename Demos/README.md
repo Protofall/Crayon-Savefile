@@ -55,6 +55,8 @@ A few variables are removed, and some variables are added. We delete and forget 
 
 We also add 5 new variables all of length one with types `float`, `int32_t`, `uint16_t`, `int16_t`, `int8_t` in that order. The new float is to show we can delete a variable (`garbage`) from any position in history, not just the first or last added of that type. The rest are to show that those types can be handled in general
 
+Also note that `var2`'s default value was 3.14, but now its 5.5
+
 Total vars
 - 2 doubles
 - 2 float
