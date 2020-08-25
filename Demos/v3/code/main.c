@@ -19,18 +19,13 @@ KOS_INIT_ROMDISK(romdisk_boot);
 #endif
 
 int main(){
-	
-	#if defined(_arch_dreamcast)
-	
-	pvr_init_defaults();	//Init kos
-	font_init();
-	
-	#endif
-
 	char buffer[400];	//Currently around 254 chars are used
 	int dev_id = 0;
 
 	#if defined(_arch_dreamcast)
+	
+	pvr_init_defaults();	//Init kos
+	font_init();
 	
 	uint32_t previous[4] = {0};
 	uint8_t end = 0;
@@ -76,7 +71,6 @@ int main(){
 	scanf("%d", &dev_id);
 
 	#endif
-
 
 	crayon_savefile_details_t savefile_details;
 

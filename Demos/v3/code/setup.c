@@ -3,19 +3,13 @@
 //NOTE: This function contains the default values only for the current version
 //Thats why we can reference the variables directly like this
 void savefile_defaults(){
-	// sf_old_coins[0] = 300;
 	sf_var2[0] = 5.5;
-	// sf_dunno[0] = 27;
 
 	//Don't need 32 atm, but if adding more than 65536 vars, you're going to need this
 	uint32_t i;
 	// uint32_t j;
 	for(i = 0; i < sf_var4_length; i++){
 		sf_lol[i][0] = 2;
-
-		// for(j = 0; j < sf_hi_length; j++){
-		// 	sf_hi[i][j] = -1;
-		// }
 
 		//I use strncpy instead of strcpy so we know the value
 		//of all characters in the buffer
@@ -27,10 +21,6 @@ void savefile_defaults(){
 	for(i = 0; i < sf_speedrun_times_length; i++){
 		sf_speedrun_times[i] = -1;
 	}
-
-	// for(i = 0; i < sf_garbage_length; i++){
-	// 	sf_garbage[i] = 0;
-	// }
 
 	sf_coins[0] = 300;
 
@@ -65,7 +55,7 @@ int8_t upgrade_savefile(void **loaded_variables, crayon_savefile_version_t loade
 	if(loaded_version < SFV_MISTAKES_MADE){
 		for(i = 0; i < sf_var4_length; i++){
 			s32_ptr = loaded_variables[remove_indexes[i + 1]];
-			// if(!s32_ptr){continue;}	//Only needed if we didn't have the above if check
+			// if(!s32_ptr){continue;}	//Only needed if we didn't have the first if check
 			for(j = 0; j < sf_hi_length; j++){
 				sf_lol[i][0] += !(s32_ptr[j] % 2);	//If it was even, add one to lol
 			}
@@ -75,7 +65,6 @@ int8_t upgrade_savefile(void **loaded_variables, crayon_savefile_version_t loade
 		// if(!u16_ptr){break;}
 		sf_coins[0] = u16_ptr[0];
 	}
-
 
 	return 0;
 }
@@ -101,7 +90,6 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 	error += crayon_savefile_set_app_id(details, "ProtoSaveDemo3");
 	error += crayon_savefile_set_short_desc(details, "Save Demo 3");
 	error += crayon_savefile_set_long_desc(details, "Crayon's Savefile demo");
-	
 	if(error){return 1;}
 
 	#if defined(_arch_dreamcast)
@@ -166,14 +154,19 @@ uint8_t setup_savefile(crayon_savefile_details_t * details){
 
 //We use a double pointer because we want to modify the pointer itself with malloc
 int16_t setup_vmu_icon_load(uint8_t **vmu_lcd_icon, char *icon_path, uint8_t *vmu_bitmap){
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 
 	*vmu_bitmap = crayon_peripheral_dreamcast_get_screens();
 
-	*vmu_lcd_icon = (uint8_t *) malloc(6 * 32);	//6 * 32 because we have 48/32 1bpp so we need that / 8 bytes
+	*vmu_lcd_icon = malloc(6 * 32);	//6 * 32 because we have 48/32 1bpp so we need that / 8 bytes
+	if(*vmu_lcd_icon == NULL){
+		return -1;
+	}
+
 	FILE * file_lcd_icon = fopen(icon_path, "rb");
 	if(!file_lcd_icon){return -1;}
-	size_t res = fread(*vmu_lcd_icon, 192, 1, file_lcd_icon);	//If the icon is right, it *must* byt 192 bytes
+
+	size_t res = fread(*vmu_lcd_icon, 192, 1, file_lcd_icon);	//If the icon is right, it *must* be 192 bytes
 	fclose(file_lcd_icon);
 
 	return res;
