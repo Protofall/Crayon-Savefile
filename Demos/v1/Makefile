@@ -57,7 +57,7 @@ include $(KOS_BASE)/Makefile.rules
 
 # create cdi image from CDFS_DIR
 $(TARGET).cdi: $(SCRAMBLED)
-	mkisofs -G $(IPBIN) -C 0,11702 -J -l -r -o $(TARGET).iso $(CDFS_DIR)
+	genisoimage -G $(IPBIN) -C 0,11702 -J -l -r -o $(TARGET).iso $(CDFS_DIR)
 	cdi4dc $(TARGET).iso $(TARGET).cdi
 
 # create SCRAMBLED executable from elf
