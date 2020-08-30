@@ -1424,11 +1424,6 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 
 	#endif
 
-	char *savename = crayon_savefile_get_full_path(details, save_device_id);
-	if(!savename){
-		return -1;
-	}
-
 	//Any device thats present gets set
 	crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
 
@@ -1437,6 +1432,11 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 	//Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
 	//So if the savefile does exist, then we say the device isn't present, else we check for space and see
 	if(crayon_savefile_check_savedata(details, save_device_id)){
+		char *savename = crayon_savefile_get_full_path(details, save_device_id);
+		if(!savename){
+			return -1;
+		}
+
 		//Calculate the size of the savefile to make sure if we have enough space
 		fp = fopen(savename, "rb");
 		free(savename);
@@ -1467,6 +1467,11 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		}
 		else if(details->savefile_versions[save_device_id] != 0 &&
 			details->savefile_versions[save_device_id] < details->latest_version){
+			char *savename = crayon_savefile_get_full_path(details, save_device_id);
+			if(!savename){
+				return -1;
+			}
+			
 			fp = fopen(savename, "rb");
 			free(savename);
 			if(!fp){	//Shouldn't occur
