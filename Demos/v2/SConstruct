@@ -13,7 +13,7 @@ elif platform == "win32":
 elif platform == "darwin":
 	specific_platform = 'mac'
 else:
-	print "Platform \"" + platform + "\" isn't supported."
+	print("Platform \"" + platform + "\" isn't supported.")
 	exit(1)
 
 #The path to the actual lib

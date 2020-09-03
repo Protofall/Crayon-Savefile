@@ -9,13 +9,13 @@ if DEBUG == 'false' or DEBUG == '0' or DEBUG == 'none':
 #Check if arguments are valid
 supported_platforms = ['dreamcast', 'pc', 'all']
 if PLATFORM == None or PLATFORM not in supported_platforms or DEBUG != False and DEBUG != True:
-	print """
-	Please specify the target platform to compile or clean Crayon Savefile for on the command
-	line (eg. `scons PLATFORM=dreamcast DEBUG=false`).
-	"""
-	print "\tSupported platforms are:"
+	print("""
+	Please specify the target platform to compile or clean Crayon Savefile for and optionally
+	provide a debug flag (eg. `scons PLATFORM=dreamcast DEBUG=false`).
+	""")
+	print("\tSupported platforms are:")
 	for p in supported_platforms:
-		print "\t- " + p
+		print("\t- " + p)
 
 	exit(1)
 
@@ -24,23 +24,34 @@ import os
 env = list()
 specific_platform = list()
 include_path = '#/include/crayon_savefile/'
-if PLATFORM == 'dreamcast' or PLATFORM == 'all':
+if PLATFORM == 'dreamcast' or PLATFORM == 'all':	
 	# The # symbol means relative to our working directory
-	env.append(Environment(CPPPATH = include_path, CC = 'kos-cc', AR = 'kos-ar'))
+	env.append(Environment(CPPPATH = include_path, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
 
 	env[-1].AppendENVPath('PATH', [os.environ['PATH']]) #Fixes the "Unable to find kos-cc" thing
 														#You could just add "ENV = os.environ" to the constructor instead
 	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
+
 	env[-1]['LIBPREFIX'] = 'lib'	#Making sure we use the right prefix and suffix
 	env[-1]['LIBSUFFIX'] = '.a'
 	specific_platform.append('dreamcast')
 
+	# print "Blah"
+	# print env[-1]['CCVERSION']	#Throws an error, probably because I changed CC
+	# print "Blah2"
+
+
 from sys import platform
 if PLATFORM == 'pc' or PLATFORM == 'all':
 	env.append(Environment(CPPPATH = include_path))
+	# print env[-1]['CCVERSION']
 	env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
 																	#does colour for terminals and scons is just
 																	#an "output")
+	# if (env[-1]['CC'] == 'gcc' && env[-1]['CCVERSION'] >= '5.0.0') && (env[-1]['CXX'] == 'g++' && env[-1]['CXXVERSION'] >= '5.0.0'):
+		# env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
+																#does colour for terminals and scons is just
+																#an "output")
 	if platform.startswith('linux') == True:
 		specific_platform.append('linux')
 	elif platform == "win32":
@@ -48,7 +59,7 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 	elif platform == "darwin":
 		specific_platform.append('mac')
 	else:
-		print "Platform \"" + platform + "\" isn't supported"
+		print("Platform \"" + platform + "\" isn't supported")
 		exit(1)
 
 #Create our library/s
@@ -57,6 +68,11 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 	if DEBUG == True:
 		e.AppendUnique(CPPFLAGS = ['-g'])
 		e.AppendUnique(CPPDEFINES = [{'CRAYON_DEBUG':1}])
+
+	# if (e['CC'] == 'gcc' and e['CCVERSION'] >= '5.0.0') or (e['CXX'] == 'g++' and e['CXXVERSION'] >= '5.0.0'):
+		# e.AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
+																#does colour for terminals and scons is just
+																#an "output")
 
 	build_dir = 'build/' + p + '/'	#Don't put a #/ in front, that breaks stuff for some reason
 	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir
