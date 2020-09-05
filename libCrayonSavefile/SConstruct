@@ -8,10 +8,12 @@ if DEBUG == 'false' or DEBUG == '0' or DEBUG == 'none':
 
 #Check if arguments are valid
 supported_platforms = ['dreamcast', 'pc', 'all']
-if PLATFORM == None or PLATFORM not in supported_platforms or DEBUG != False and DEBUG != True:
+if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False and DEBUG != True):
 	print("""
-	Please specify the target platform to compile or clean Crayon Savefile for and optionally
-	provide a debug flag (eg. `scons PLATFORM=dreamcast DEBUG=false`).
+	Please specify the target platform to compile or clean Crayon Savefile for. You can also
+	optionally enable debug flags. By default debug is false.
+
+	eg. `scons PLATFORM=dreamcast DEBUG=false`.
 	""")
 	print("\tSupported platforms are:")
 	for p in supported_platforms:
@@ -23,35 +25,36 @@ if PLATFORM == None or PLATFORM not in supported_platforms or DEBUG != False and
 import os
 env = list()
 specific_platform = list()
+# The # symbol means relative to our working directory
 include_path = '#/include/crayon_savefile/'
-if PLATFORM == 'dreamcast' or PLATFORM == 'all':	
-	# The # symbol means relative to our working directory
-	env.append(Environment(CPPPATH = include_path, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
+if PLATFORM == 'dreamcast' or PLATFORM == 'all':
+	env.append(Environment(ENV = os.environ, CPPPATH = include_path, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
 
-	env[-1].AppendENVPath('PATH', [os.environ['PATH']]) #Fixes the "Unable to find kos-cc" thing
-														#You could just add "ENV = os.environ" to the constructor instead
-	env[-1]['ENV'].update({k: v for k, v in os.environ.items() if k.startswith('KOS_')})	#Adding in KOS vars
-
-	env[-1]['LIBPREFIX'] = 'lib'	#Making sure we use the right prefix and suffix
+	#Making sure we use the right prefix and suffix
+	env[-1]['LIBPREFIX'] = 'lib'
 	env[-1]['LIBSUFFIX'] = '.a'
-	specific_platform.append('dreamcast')
 
-	# print "Blah"
-	# print env[-1]['CCVERSION']	#Throws an error, probably because I changed CC
-	# print "Blah2"
+	#Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
+	#Major, Minor, Patch version numbers
+	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
+	if our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0:
+		env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])
+
+	specific_platform.append('dreamcast')
 
 
 from sys import platform
 if PLATFORM == 'pc' or PLATFORM == 'all':
 	env.append(Environment(CPPPATH = include_path))
-	# print env[-1]['CCVERSION']
-	env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
-																	#does colour for terminals and scons is just
-																	#an "output")
-	# if (env[-1]['CC'] == 'gcc' && env[-1]['CCVERSION'] >= '5.0.0') && (env[-1]['CXX'] == 'g++' && env[-1]['CXXVERSION'] >= '5.0.0'):
-		# env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
-																#does colour for terminals and scons is just
-																#an "output")
+
+	#Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
+	#Major, Minor, Patch version numbers
+	#We need the CC and CXX checks because this flag is only for GCC/G++
+	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
+	if (our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0 and
+		(env[-1]['CC'] is 'gcc' or env[-1]['CXX'] is 'g++')):
+		env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])
+
 	if platform.startswith('linux') == True:
 		specific_platform.append('linux')
 	elif platform == "win32":
@@ -66,17 +69,20 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
 	#Add in some cflags if in debug mode
 	if DEBUG == True:
-		e.AppendUnique(CPPFLAGS = ['-g'])
 		e.AppendUnique(CPPDEFINES = [{'CRAYON_DEBUG':1}])
-
-	# if (e['CC'] == 'gcc' and e['CCVERSION'] >= '5.0.0') or (e['CXX'] == 'g++' and e['CXXVERSION'] >= '5.0.0'):
-		# e.AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Enables GCC colour (Since it normally only
-																#does colour for terminals and scons is just
-																#an "output")
+		#Wformat level 2 has extra checks over standard.
+		#no-common is where two files define the same global var when they should be seperate
+		#g3 is like g, but it includes macro information
+		e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
+		#These can be helpful sometimes
+		#conversion will check for type conversions (eg uint8_t var = (U32 VAR))
+		#no-unused-parameter disables said check
+		# e.AppendUnique(CPPFLAGS = ['-Wconversion', '-Wno-unused-parameter'])
 
 	build_dir = 'build/' + p + '/'	#Don't put a #/ in front, that breaks stuff for some reason
-	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code directory to our build dir
-													#duplicate=0 means it won't duplicate the src files
+	e.VariantDir(build_dir, 'code', duplicate=0)	#Kind of moves over the processing for the code
+													#directory to our build dir duplicate=0 means it
+													#won't duplicate the src files
 
 	prog_files = Glob('#/' + build_dir + '*.c') #I know its weird, but we have to specify the output path here
 	e.Library(target = '#/lib/' + p + '/' + 'CrayonSavefile', source = prog_files)

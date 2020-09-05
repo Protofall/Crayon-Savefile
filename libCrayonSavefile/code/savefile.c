@@ -415,8 +415,8 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	printf("\n---SOLIDIFY'S ENDING STATS---\n");
 	printf("SF Size: HDR %d BODY %"PRIu32"\n", CRAYON_SF_HDR_SIZE, details->savedata.size);
 	//Those quotes between the two lines is to allow the string to continue as normal over multiple lines
-	printf("Version size: %u. Savedata lengths: %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32","
-		"%"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32"\n", sizeof(crayon_savefile_version_t),
+	printf("Version size: %"PRIu32". Savedata lengths: %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32","
+		"%"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32"\n", (uint32_t)sizeof(crayon_savefile_version_t),
 		details->savedata.lengths[0], details->savedata.lengths[1], details->savedata.lengths[2],
 		details->savedata.lengths[3], details->savedata.lengths[4], details->savedata.lengths[5],
 		details->savedata.lengths[6], details->savedata.lengths[7], details->savedata.lengths[8]);
