@@ -13,67 +13,67 @@
 #define sf_old_coins_type CRAYON_TYPE_UINT16
 #define sf_old_coins_length 1	//If you want, these length defines could be unsigned int consts.
 
-float *sf_var2;
+extern float *sf_var2;
 #define sf_var2_type CRAYON_TYPE_FLOAT
 #define sf_var2_length 1
 
-// uint8_t *sf_dunno;
+// extern uint8_t *sf_dunno;
 #define sf_dunno_type CRAYON_TYPE_UINT8
 #define sf_dunno_length 1
 
 //Now the "other_struct"
 #define sf_var4_length 10
 
-uint8_t *sf_lol[sf_var4_length];
+extern uint8_t *sf_lol[sf_var4_length];
 #define sf_lol_type CRAYON_TYPE_UINT8
 #define sf_lol_length 1
 
-// int32_t *sf_hi[sf_var4_length];
+// extern int32_t *sf_hi[sf_var4_length];
 #define sf_hi_type CRAYON_TYPE_SINT32
 #define sf_hi_length 2
 
-char *sf_name[sf_var4_length];	// "sf_var4_length" strings with 16 chars each
+extern char *sf_name[sf_var4_length];	// "sf_var4_length" strings with 16 chars each
 #define sf_name_type CRAYON_TYPE_CHAR
 #define sf_name_length 16
 
 
 //v2 VARS
 
-uint8_t *sf_myspace;
+extern uint8_t *sf_myspace;
 #define sf_myspace_type CRAYON_TYPE_UINT8
 #define sf_myspace_length 1
 
-double *sf_speedrun_times;
+extern double *sf_speedrun_times;
 #define sf_speedrun_times_type CRAYON_TYPE_DOUBLE
 #define sf_speedrun_times_length 2
 
-// float *sf_garbage;
+// extern float *sf_garbage;
 #define sf_garbage_type CRAYON_TYPE_FLOAT
 #define sf_garbage_length 128
 
 //v3 vars
 
-uint32_t *sf_coins;
+extern uint32_t *sf_coins;
 #define sf_coins_type CRAYON_TYPE_UINT32
 #define sf_coins_length 1
 
-int32_t *sf_rand_var_1;
+extern int32_t *sf_rand_var_1;
 #define sf_rand_var_1_type CRAYON_TYPE_SINT32
 #define sf_rand_var_1_length 1
 
-float *sf_rand_var_2;
+extern float *sf_rand_var_2;
 #define sf_rand_var_2_type CRAYON_TYPE_FLOAT
 #define sf_rand_var_2_length 1
 
-uint16_t *sf_rand_var_3;
+extern uint16_t *sf_rand_var_3;
 #define sf_rand_var_3_type CRAYON_TYPE_UINT16
 #define sf_rand_var_3_length 1
 
-int16_t *sf_rand_var_4;
+extern int16_t *sf_rand_var_4;
 #define sf_rand_var_4_type CRAYON_TYPE_SINT16
 #define sf_rand_var_4_length 1
 
-int8_t *sf_rand_var_5;
+extern int8_t *sf_rand_var_5;
 #define sf_rand_var_5_type CRAYON_TYPE_SINT8
 #define sf_rand_var_5_length 1
 
