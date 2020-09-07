@@ -18,6 +18,16 @@ The body is the version number (32 bit unsigned value by default) followed by th
 
 The program will know how to handle older savefiles using its history data list that is created when the user "add"s variables to the savefile and later "solidify"s it.
 
+### Dependencies
+
+Every platform has scons as a dependancy, installing it is decribed below.
+
+Dreamcast depends on "KallistiOS". Setup tutorials can be found here
+- http://gamedev.allusion.net/softprj/kos/setup-wsl.php
+- http://gamedev.allusion.net/softprj/kos/setup-linux.php
+- http://gamedev.allusion.net/softprj/kos/setup-osx.php
+
+
 ### Building/SConstruct
 
 In order to build the library and the Demos, you need to use the SConstruct files. If you're familiar with Makefiles, then they are similar in the sense that they are both build languages. If you have the apt package manager use the following command/s to install SConstruct and the necessary Python stuff:

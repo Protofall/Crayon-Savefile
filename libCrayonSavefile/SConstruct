@@ -12,6 +12,9 @@ if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False an
 	# Consider using Chapter 9.1, help
 	# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
 
+	# Similarly chapter 10.2.2 for help on vars
+	# https://scons.org/doc/production/HTML/scons-user.html#idp140430745735448
+
 	print("""
 	Please specify the target platform to compile or clean Crayon Savefile for. You can also
 	optionally enable debug flags. By default debug is false.
@@ -47,14 +50,14 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 
 from sys import platform
 if PLATFORM == 'pc' or PLATFORM == 'all':
-	env.append(Environment(CPPPATH = include_path))
+	env.append(Environment(ENV = os.environ, CPPPATH = include_path))	#Apparently some ppl need that ENV for CCVERSION
 
 	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 	# Major, Minor, Patch version numbers
 	# We need the CC and CXX checks because this flag is only for GCC/G++
 	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
 	if (our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0 and
-		(env[-1]['CC'] is 'gcc' or env[-1]['CXX'] is 'g++')):
+		(env[-1]['CC'] == 'gcc' or env[-1]['CXX'] == 'g++')):
 		env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])
 
 	if platform.startswith('linux') == True:
@@ -67,7 +70,9 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 		print("Platform \"" + platform + "\" isn't supported")
 		exit(1)
 
+
 # Create our library/s
+lib_files = list()
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
 	#Add in some cflags if in debug mode
 	if DEBUG == True:
@@ -86,6 +91,8 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 													# directory to our build dir duplicate=0 means it
 													# won't duplicate the src files
 
-	prog_files = Glob(build_dir + '*.c') # I know its weird, but we have to specify the output path here
-	e.Library(target = 'lib/' + p + '/' + 'CrayonSavefile', source = prog_files)
-	# Should we be returning these libraries?
+	prog_files = Glob(build_dir + '*.c') # We have to specify the build path instead of the real one
+	lib_files.append(e.Library(target = 'lib/' + p + '/' + 'CrayonSavefile', source = prog_files))
+
+# Should we be returning these libraries? Eg when called by a project file
+# Return(lib_files)

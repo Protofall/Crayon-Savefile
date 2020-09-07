@@ -28,7 +28,9 @@ env.AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC s
 
 # This should also not call the script when doing a clean
 # I want to override its arguments so its just PLATFORM and DEBUG set
-if GetOption('clean') == False:
+if not GetOption('clean'):
+	# I MIGHT WANT TO REPLACE THIS WITH NoClean()
+	# Ch 13.2 https://scons.org/doc/production/HTML/scons-user.html#idp140430748460472
 	SConscript(lib_folder + 'SConstruct')
 
 # !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good example",
