@@ -43,7 +43,7 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	# Major, Minor, Patch version numbers
 	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
 	if our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0:
-		env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])
+		env[-1].AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])
 
 	specific_platform.append('dreamcast')
 
@@ -58,7 +58,7 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
 	if (our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0 and
 		(env[-1]['CC'] == 'gcc' or env[-1]['CXX'] == 'g++')):
-		env[-1].AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])
+		env[-1].AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])
 
 	if platform.startswith('linux') == True:
 		specific_platform.append('linux')

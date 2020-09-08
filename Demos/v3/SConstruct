@@ -20,7 +20,7 @@ else:
 
 # Create our environments are tell it where all the lib's .h files are
 env = Environment(CPPPATH = [include_path], BUILD_DIR = 'build/' + specific_platform + '/')
-env.AppendUnique(CFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC since DC's old GCC doesn't know this
+env.AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC since DC's old GCC doesn't know this
 
 # For dreamcast
 # env['LIBPREFIX'] = 'lib'
