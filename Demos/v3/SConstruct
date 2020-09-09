@@ -26,20 +26,34 @@ env.AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC 
 # env['LIBPREFIX'] = 'lib'
 # env['LIBSUFFIX'] = '.a'
 
-# This should also not call the script when doing a clean
-# I want to override its arguments so its just PLATFORM and DEBUG set
-if not GetOption('clean'):
-	# I MIGHT WANT TO REPLACE THIS WITH NoClean()
-	# Ch 13.2 https://scons.org/doc/production/HTML/scons-user.html#idp140430748460472
-	SConscript(lib_folder + 'SConstruct')
+# This will return a dict/hash-map of build nodes with a string for a key
+# NOTE: Calling clean will call this file's clean, but generally there isn't a need to call clean
+lib_dict = SConscript(lib_folder + 'SConstruct')
+if "dreamcast" in lib_dict:
+	print("Dreamcast present")
+if "linux" in lib_dict:
+	print("Linux present")
+if "windows" in lib_dict:
+	print("Windows present")
+if "mac" in lib_dict:
+	print("Apple present")
+# print(lib_dict)
 
-# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good example",
-# this part right here is NOT the best practice. What you should actually do is have an SConscript file in #/code/
-# and call it with variant_dir parameter set to $BUILD_DIR. Then that script contains the code below this VariantDir
-# call. The way its currently setup can be confusing and error-prone. The reasons I'm not doing that here is because
-# I want everything in one file and people might be confused why an SConscript file is in their code folder, so this
-# way people can just see this SConstruct file and know "That's the build file"
-# Also if I did this before the SConscript call then it would mess that up
+if specific_platform in lib_dict and 0 == 1:
+	lib = lib_dict[specific_platform]
+else:
+	# I should probably do something else instead
+	print("CAN'T FIND LIB FILE")
+	exit(1)
+
+# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
+# example", this part right here is NOT the best practice. What you should actually do is have an
+# SConscript file in #/code/ and call it with variant_dir parameter set to $BUILD_DIR. Then that script
+# contains the code below this VariantDir call. The way its currently setup can be confusing and
+# error-prone. The reasons I'm not doing that here is because I want everything in one file and people
+# might be confused why an SConscript file is in their code folder, so this way people can just see this
+# SConstruct file and know "That's the build file". Also if I did this before the SConscript call then
+# it would mess that up
 env.VariantDir('$BUILD_DIR', '#/code/', duplicate = 0)
 
 # Create the objects and program, then copy the program to the program folder
@@ -48,4 +62,4 @@ src_files = env.Glob('$BUILD_DIR/*.c')
 # The path to the actual lib
 lib_path = lib_folder + 'lib/' + specific_platform +'/'
 target_prog = '#/program/' + specific_platform + '/Crayon-Savefile-Demo-v3'
-program_file = env.Program(target = target_prog, source = src_files, LIBS = ['CrayonSavefile'], LIBPATH = lib_path)
+program_file = env.Program(target = target_prog, source = src_files, LIBS = lib, LIBPATH = lib_path)

@@ -72,7 +72,7 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 
 
 # Create our library/s
-lib_files = list()
+lib_dict = dict()
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
 	#Add in some cflags if in debug mode
 	if DEBUG == True:
@@ -92,7 +92,9 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 													# won't duplicate the src files
 
 	prog_files = Glob(build_dir + '*.c') # We have to specify the build path instead of the real one
-	lib_files.append(e.Library(target = 'lib/' + p + '/' + 'CrayonSavefile', source = prog_files))
+	lib_dict[p] = e.Library(target = 'lib/' + p + '/' + 'CrayonSavefile', source = prog_files)
 
 # Should we be returning these libraries? Eg when called by a project file
-# Return(lib_files)
+# NOTE: User guide 5.3 says you can print the file names at least
+# e.g. print("The object file is: %s"%object_list[0])
+Return('lib_dict')
