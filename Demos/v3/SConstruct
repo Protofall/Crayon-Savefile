@@ -31,12 +31,12 @@ env.AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC 
 lib_dict = SConscript(lib_folder + 'SConstruct')
 # print(lib_dict)
 
-if specific_platform in lib_dict:
-	lib = lib_dict[specific_platform]
-else:
-	# I should probably do something else instead
-	print("Somehow lib file for " + specific_platform + " can't be found")
-	env.Exit([1])
+import sys
+try:
+    lib = lib_dict[specific_platform]
+except KeyError:
+    print("Somehow lib file for \"" + specific_platform +"\" can't be found", file=sys.stderr)
+    exit(1)
 
 # !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
 # example", this part right here is NOT the best practice. What you should actually do is have an
