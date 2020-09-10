@@ -16,7 +16,7 @@ if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False an
 	# https://scons.org/doc/production/HTML/scons-user.html#idp140430745735448
 
 	print("""
-	Please specify the target platform to compile or clean Crayon Savefile for. You can also
+	Please specify the target platform to compile Crayon Savefile for. You can also
 	optionally enable debug flags. By default debug is false.
 
 	eg. `scons PLATFORM=dreamcast DEBUG=false`.
@@ -38,6 +38,7 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	# Making sure we use the right prefix and suffix
 	env[-1]['LIBPREFIX'] = 'lib'
 	env[-1]['LIBSUFFIX'] = '.a'
+	env[-1]['OBJSUFFIX'] = '.o'	# Windows has .obj
 
 	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 	# Major, Minor, Patch version numbers
