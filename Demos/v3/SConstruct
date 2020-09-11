@@ -5,7 +5,7 @@
 # SConscript it works from this file rather than relative
 lib_folder = '#/../../libCrayonSavefile/'
 include_path = lib_folder + 'include/'
-program_name = "Crayon-Savefile-Demo-v3"
+program_name = 'Crayon-Savefile-Demo-v3'
 ip_bin_path = './'
 
 # ------------- FUNCTION 1 BEGIN ------------- #
@@ -27,9 +27,9 @@ if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False an
 
 	eg. `scons PLATFORM=dreamcast DEBUG=false`.
 	""")
-	print("\tSupported platforms are:")
+	print('\tSupported platforms are:')
 	for p in supported_platforms:
-		print("\t- " + p)
+		print('\t- ' + p)
 
 	exit(1)
 
@@ -60,9 +60,9 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 
 	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 	# Major, Minor, Patch version numbers
-	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
+	our_version = list(map(int, env[-1]['CCVERSION'].split('.')))
 	if our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0:
-		env[-1].AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])
+		env[-1].AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
 
 	specific_platform.append('dreamcast')
 
@@ -74,19 +74,19 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 	# Major, Minor, Patch version numbers
 	# We need the CC and CXX checks because this flag is only for GCC/G++
-	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
+	our_version = list(map(int, env[-1]['CCVERSION'].split('.')))
 	if (our_version[0] >= 4 and our_version[1] >= 9 and our_version[2] >= 0 and
 		(env[-1]['CC'] == 'gcc' or env[-1]['CXX'] == 'g++')):
-		env[-1].AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])
+		env[-1].AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
 
 	if platform.startswith('linux') == True:
 		specific_platform.append('linux')
-	elif platform == "win32":
+	elif platform == 'win32]':
 		specific_platform.append('windows')
-	elif platform == "darwin":
+	elif platform == 'darwin':
 		specific_platform.append('mac')
 	else:
-		print("Platform \"" + platform + "\" isn't supported")
+		print('Platform "' + platform + '" is not supported')
 		exit(1)
 
 # ------------- FUNCTION 2 END ------------- #
@@ -100,7 +100,7 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 	try:
 		lib = lib_dict[p]
 	except KeyError:
-		print("Somehow lib file for \"" + specific_platform +"\" can't be found", file=sys.stderr)
+		print('Somehow lib file for "' + specific_platform +'" cannot be found', file=sys.stderr)
 		exit(1)
 
 	lib_path = lib_folder + 'lib/' + p +'/'
@@ -109,7 +109,7 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 	if DEBUG == True:
 		e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
 
-	b_dir = 'build/' + p + '/'
+	build_dir = 'build/' + p + '/'
 	prog_dir = 'program/' + p + '/'
 	# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
 	# example", this part right here is NOT the best practice. What you should actually do is have an
@@ -119,29 +119,30 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 	# people might be confused why an SConscript file is in their code folder, so this way people can
 	# just see this SConstruct file and know "That's the build file". Also if I did this before the
 	# SConscript call then it would mess that up
-	e.VariantDir(b_dir, code_dir, duplicate=0)	# Kind of moves over the processing for the code
+	print(p)
+	e.VariantDir(build_dir, code_dir, duplicate=0)	# Kind of moves over the processing for the code
 												# directory to our build dir duplicate=0 means it
 												# won't duplicate the src files
-	e.VariantDir(cdfs_dir, b_dir, duplicate=0)
-	e.VariantDir(prog_dir, b_dir, duplicate=0)
+	e.VariantDir(cdfs_dir, build_dir, duplicate=0)
+	e.VariantDir(prog_dir, build_dir, duplicate=0)
 
 
-	src_files = Glob(b_dir + '*.c') # We have to specify the build path instead of the real one
-	if p == "linux" or p == "mac" or p == "windows":
+	src_files = Glob(build_dir + '*.c') # We have to specify the build path instead of the real one
+	if p == 'linux' or p == 'mac' or p == 'windows':
 		target_prog = '#/program/' + p + '/' + program_name
 		e.Program(target_prog, src_files, LIBS = lib, LIBPATH = lib_path)
-	elif p == "dreamcast":
-		rom_img = e.Command(b_dir + 'romdisk_boot.img', 'romdisk_boot/',
+	elif p == 'dreamcast':
+		rom_img = e.Command(build_dir + 'romdisk_boot.img', 'romdisk_boot/',
 			'$KOS_GENROMFS -f $TARGET -d $SOURCE')
-		src_files.append(e.Command(b_dir + 'romdisk_boot.o', rom_img,
+		src_files.append(e.Command(build_dir + 'romdisk_boot.o', rom_img,
 			'$KOS_BASE/utils/bin2o/bin2o $SOURCE romdisk_boot $TARGET'))
 		# The source files list can contain c files and objects
-		elf = e.Program(b_dir + program_name, src_files, LIBS = lib, LIBPATH = lib_path)
-		binary = e.Command(b_dir + program_name + '.bin', elf,
+		elf = e.Program(build_dir + program_name, src_files, LIBS = lib, LIBPATH = lib_path)
+		binary = e.Command(build_dir + program_name + '.bin', elf,
 			'sh-elf-objcopy -R .stack -O binary $SOURCE $TARGET')
 		scrambled = e.Command(cdfs_dir + '1ST_READ.BIN', binary,
 			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
-		iso = e.Command(b_dir + program_name + '.iso', cdfs_dir + '1ST_READ.BIN',
+		iso = e.Command(build_dir + program_name + '.iso', cdfs_dir + '1ST_READ.BIN',
 			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $SOURCE')
 		cdi = e.Command(prog_dir + program_name + '.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
