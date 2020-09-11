@@ -6,6 +6,7 @@
 lib_folder = '#/../../libCrayonSavefile/'
 include_path = lib_folder + 'include/'
 program_name = "Crayon-Savefile-Demo-v3"
+ip_bin_path = './'
 
 # ------------- FUNCTION 1 BEGIN ------------- #
 
@@ -54,6 +55,9 @@ if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	env[-1]['KOS_BASE'] = env[-1]['ENV']['KOS_BASE']
 	env[-1]['KOS_GENROMFS'] = env[-1]['ENV']['KOS_GENROMFS']
 
+	# Location of IP.BIN
+	env[-1]['IP_DIR'] = ip_bin_path + 'IP.BIN'
+
 	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 	# Major, Minor, Patch version numbers
 	our_version = list(map(int, env[-1]['CCVERSION'].split(".")))
@@ -88,6 +92,8 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 # ------------- FUNCTION 2 END ------------- #
 
 lib_dict = SConscript(lib_folder + 'SConstruct')
+cdfs_dir = 'cdfs/'
+code_dir = 'code/'
 
 import sys
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
@@ -104,9 +110,21 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 		e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
 
 	b_dir = 'build/' + p + '/'
-	e.VariantDir(b_dir, 'code', duplicate=0)	# Kind of moves over the processing for the code
+	prog_dir = 'program/' + p + '/'
+	# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
+	# example", this part right here is NOT the best practice. What you should actually do is have an
+	# SConscript file in #/code/ and call it with variant_dir parameter set to $BUILD_DIR. Then that
+	# script contains the code below this VariantDir call. The way its currently setup can be confusing
+	# and error-prone. The reasons I'm not doing that here is because I want everything in one file and
+	# people might be confused why an SConscript file is in their code folder, so this way people can
+	# just see this SConstruct file and know "That's the build file". Also if I did this before the
+	# SConscript call then it would mess that up
+	e.VariantDir(b_dir, code_dir, duplicate=0)	# Kind of moves over the processing for the code
 												# directory to our build dir duplicate=0 means it
 												# won't duplicate the src files
+	e.VariantDir(cdfs_dir, b_dir, duplicate=0)
+	e.VariantDir(prog_dir, b_dir, duplicate=0)
+
 
 	src_files = Glob(b_dir + '*.c') # We have to specify the build path instead of the real one
 	if p == "linux" or p == "mac" or p == "windows":
@@ -119,52 +137,11 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 			'$KOS_BASE/utils/bin2o/bin2o $SOURCE romdisk_boot $TARGET'))
 		# The source files list can contain c files and objects
 		elf = e.Program(b_dir + program_name, src_files, LIBS = lib, LIBPATH = lib_path)
-		# This will involve the elf->bin, scrambled_bin, iso and cdi
 		binary = e.Command(b_dir + program_name + '.bin', elf,
 			'sh-elf-objcopy -R .stack -O binary $SOURCE $TARGET')
-		scrambled = e.Command(b_dir + '1ST_READ.BIN', binary,
+		scrambled = e.Command(cdfs_dir + '1ST_READ.BIN', binary,
 			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
-		# iso = e.Command(b_dir + '1ST_READ.BIN', binary,
-		# 	'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
-
-
-# print('terminating early')
-# exit(1)
-
-# # Create our environments are tell it where all the lib's .h files are
-# env2 = Environment(CPPPATH = [include_path], BUILD_DIR = 'build/' + specific_platform + '/')
-# env2.AppendUnique(CCFLAGS = ["-fdiagnostics-color=always"])	#Only do this for PC since DC's old GCC doesn't know this
-
-# # For dreamcast
-# # env2['LIBPREFIX'] = 'lib'
-# # env2['LIBSUFFIX'] = '.a'
-
-# # This will return a dict/hash-map of build nodes with a string for a key
-# # NOTE: Calling clean will call this file's clean, but generally there isn't a need to call clean
-# lib_dict = SConscript(lib_folder + 'SConstruct')
-# # print(lib_dict)
-
-# import sys
-# try:
-#     lib = lib_dict[specific_platform]
-# except KeyError:
-#     print("Somehow lib file for \"" + specific_platform +"\" can't be found", file=sys.stderr)
-#     exit(1)
-
-# # !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
-# # example", this part right here is NOT the best practice. What you should actually do is have an
-# # SConscript file in #/code/ and call it with variant_dir parameter set to $BUILD_DIR. Then that script
-# # contains the code below this VariantDir call. The way its currently setup can be confusing and
-# # error-prone. The reasons I'm not doing that here is because I want everything in one file and people
-# # might be confused why an SConscript file is in their code folder, so this way people can just see this
-# # SConstruct file and know "That's the build file". Also if I did this before the SConscript call then
-# # it would mess that up
-# env2.VariantDir('$BUILD_DIR', '#/code/', duplicate = 0)
-
-# # Create the objects and program, then copy the program to the program folder
-# src_files = env2.Glob('$BUILD_DIR/*.c')
-
-# # The path to the actual lib
-# lib_path = lib_folder + 'lib/' + specific_platform +'/'
-# target_prog = '#/program/' + specific_platform + '/Crayon-Savefile-Demo-' + 'v3'
-# program_file = env2.Program(target = target_prog, source = src_files, LIBS = lib, LIBPATH = lib_path)
+		iso = e.Command(b_dir + program_name + '.iso', cdfs_dir + '1ST_READ.BIN',
+			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $SOURCE')
+		cdi = e.Command(prog_dir + program_name + '.cdi', iso,
+			'cdi4dc $SOURCE $TARGET')
