@@ -1,5 +1,3 @@
-# Trying to get the program to "just compile" on PC right now
-
 # Create an environment with Crayon Savefile's include folder
 # The #/ means relative to the calling script, so even in
 # SConscript it works from this file rather than relative
@@ -119,11 +117,9 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 	# people might be confused why an SConscript file is in their code folder, so this way people can
 	# just see this SConstruct file and know "That's the build file". Also if I did this before the
 	# SConscript call then it would mess that up
-	print(p)
 	e.VariantDir(build_dir, code_dir, duplicate=0)	# Kind of moves over the processing for the code
-												# directory to our build dir duplicate=0 means it
-												# won't duplicate the src files
-	e.VariantDir(cdfs_dir, build_dir, duplicate=0)
+													# directory to our build dir duplicate=0 means it
+													# won't duplicate the src files
 	e.VariantDir(prog_dir, build_dir, duplicate=0)
 
 
@@ -138,11 +134,15 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 			'$KOS_BASE/utils/bin2o/bin2o $SOURCE romdisk_boot $TARGET'))
 		# The source files list can contain c files and objects
 		elf = e.Program(build_dir + program_name, src_files, LIBS = lib, LIBPATH = lib_path)
+		# e.Install(prog_dir, elf)	#Some people want the elf instead
 		binary = e.Command(build_dir + program_name + '.bin', elf,
 			'sh-elf-objcopy -R .stack -O binary $SOURCE $TARGET')
-		scrambled = e.Command(cdfs_dir + '1ST_READ.BIN', binary,
+		scrambled = e.Command(build_dir + '1ST_READ.BIN', binary,
 			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
-		iso = e.Command(build_dir + program_name + '.iso', cdfs_dir + '1ST_READ.BIN',
-			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $SOURCE')
+		cdfs_scrambled = e.Install(cdfs_dir, scrambled)
+		# Iso depends on cdfs_scrambled, but we pass in "cdfs/"" instead of the source/s
+		e['CDFS'] = 'cdfs/'
+		iso = e.Command(build_dir + program_name + '.iso', cdfs_scrambled,
+			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS')
 		cdi = e.Command(prog_dir + program_name + '.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
