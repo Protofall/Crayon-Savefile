@@ -1,6 +1,6 @@
 #include "savefile.h"
 
-//Its a path to the folder where it will try to save to
+// Its a path to the folder where it will try to save to
 char *__savefile_path = NULL;
 uint16_t __savefile_path_length = 0;
 
@@ -41,7 +41,7 @@ int8_t crayon_savefile_set_base_path(char *path){
 	return 0;
 }
 
-//Make sure to call this first (And call the save icon and eyecatcher functions after since this overides them)
+// Make sure to call this first (And call the save icon and eyecatcher functions after since this overides them)
 int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details, const char *save_name,
 	crayon_savefile_version_t latest_version, void (*default_values_func)(),
 	int8_t (*upgrade_savefile_func)(void**, crayon_savefile_version_t, crayon_savefile_version_t)){
@@ -50,7 +50,7 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 
 	details->latest_version = latest_version;
 
-	//Could probably replace this with a memset zero
+	// Could probably replace this with a memset zero
 	details->savedata.doubles = NULL;
 	details->savedata.floats = NULL;
 	details->savedata.u32 = NULL;
@@ -81,7 +81,7 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 	details->icon_anim_count = 0;
 
 	details->eyecatcher_data = NULL;
-	details->eyecatcher_type = VMUPKG_EC_NONE;	//The default, no eyecatcher
+	details->eyecatcher_type = VMUPKG_EC_NONE;	// The default, no eyecatcher
 	
 	#endif
 
@@ -105,9 +105,9 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 		}
 	}
 
-	//Given string is too big (Plus 1 for null terminator) or a previous error occured
+	// Given string is too big (Plus 1 for null terminator) or a previous error occured
 	if(error || save_name_length + 1 > str_lengths[CRAYON_SF_STRING_FILENAME]){
-		//Need to properly un-allocate stuff
+		// Need to properly un-allocate stuff
 		for(i = 0; i < CRAYON_SF_NUM_DETAIL_STRINGS; i++){
 			if(details->strings[i]){free(details->strings[i]);}
 		}
@@ -115,7 +115,7 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 		return -1;
 	}
 
-	//Copy the savename
+	// Copy the savename
 	strncpy(details->strings[CRAYON_SF_STRING_FILENAME], save_name, str_lengths[CRAYON_SF_STRING_FILENAME]);
 
 	details->default_values_func = default_values_func;
@@ -138,7 +138,7 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 	uint8_t icon_anim_count, uint16_t icon_anim_speed){
 	#if defined(_arch_dreamcast)
 
-	//Since BIOS can't render more than 3 for some reason
+	// Since BIOS can't render more than 3 for some reason
 	if(icon_anim_count > 3){
 		return -1;
 	}
@@ -150,9 +150,9 @@ int8_t crayon_savefile_set_icon(crayon_savefile_details_t *details, const char *
 		return -1;
 	}
 
-	//Get the size of the file
+	// Get the size of the file
 	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);	//This will account for multi-frame icons
+	size = ftell(fp);	// This will account for multi-frame icons
 	fseek(fp, 0, SEEK_SET);
 
 	if(!(details->icon_data = malloc(size))){
@@ -198,9 +198,9 @@ int8_t crayon_savefile_set_eyecatcher(crayon_savefile_details_t *details, const 
 		return -1;
 	}
 
-	//Get the size of the file
+	// Get the size of the file
 	fseek(eyecatcher_data_file, 0, SEEK_END);
-	int size_data = ftell(eyecatcher_data_file);	//Confirming its the right size
+	int size_data = ftell(eyecatcher_data_file);	// Confirming its the right size
 	fseek(eyecatcher_data_file, 0, SEEK_SET);
 
 	switch(size_data){
@@ -236,7 +236,7 @@ int32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *d
 		return -1;
 	}
 
-	//data_type id doesn't map to any of our types
+	// data_type id doesn't map to any of our types
 	if(data_type >= CRAYON_NUM_TYPES){
 		return -1;
 	}
@@ -244,13 +244,13 @@ int32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *d
 	crayon_savefile_history_t *var = malloc(sizeof(crayon_savefile_history_t));
 	if(!var){return -1;}
 
-	//Add the new variable
+	// Add the new variable
 	var->next = NULL;
-	if(details->history_tail){	//Non-empty linked list
+	if(details->history_tail){	// Non-empty linked list
 		details->history_tail->next = var;
 		details->history_tail = var;
 	}
-	else{	//Empty linked list
+	else{	// Empty linked list
 		details->history = var;
 		details->history_tail = var;
 	}
@@ -262,13 +262,13 @@ int32_t crayon_savefile_add_variable(crayon_savefile_details_t *details, void *d
 	var->version_added = version_added;
 	var->version_removed = version_removed;
 
-	//We only extend the length if the variable still exists
+	// We only extend the length if the variable still exists
 	if(version_removed > details->latest_version){
 		details->savedata.lengths[var->data_type] += var->data_length;
 		var->data_ptr.t_double = NULL;
 	}
 
-	//Store the pointer's address so we can change it later
+	// Store the pointer's address so we can change it later
 	switch(var->data_type){
 		case CRAYON_TYPE_DOUBLE:
 			var->data_ptr.t_double = (double**)data_ptr;
@@ -308,7 +308,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	uint8_t error = 0;
 
-	//Don't both allocating space for these if we aren't using them
+	// Don't both allocating space for these if we aren't using them
 	if(lengths[CRAYON_TYPE_DOUBLE]){
 		if(!(details->savedata.doubles = malloc(sizeof(double) * lengths[CRAYON_TYPE_DOUBLE]))){error = 1;}
 	}
@@ -338,13 +338,13 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 	}
 
 	if(error){
-		crayon_savefile_free_savedata(&details->savedata);	//Note this also resets the lengths
+		crayon_savefile_free_savedata(&details->savedata);	// Note this also resets the lengths
 		return -1;
 	}
 
 	crayon_savefile_history_t *var = details->history;
 	while(var){
-		if(var->version_removed > details->latest_version){	//We only give space to vars that still exist
+		if(var->version_removed > details->latest_version){	// We only give space to vars that still exist
 			switch(var->data_type){
 				case CRAYON_TYPE_DOUBLE:
 					*var->data_ptr.t_double = &details->savedata.doubles[indexes[var->data_type]];
@@ -379,7 +379,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 		var = var->next;
 	}
 
-	//Set the default values with the user's function
+	// Set the default values with the user's function
 	(*details->default_values_func)();
 
 	details->savedata.size = sizeof(crayon_savefile_version_t) +
@@ -395,7 +395,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	crayon_savefile_update_all_device_infos(details);
 	
-	//If no savefile was found, then set our save device to the first valid memcard
+	// If no savefile was found, then set our save device to the first valid memcard
 	int8_t status;
 	uint8_t i;
 	if(details->save_device_id == -1){
@@ -414,7 +414,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 
 	printf("\n---SOLIDIFY'S ENDING STATS---\n");
 	printf("SF Size: HDR %d BODY %"PRIu32"\n", CRAYON_SF_HDR_SIZE, details->savedata.size);
-	//Those quotes between the two lines is to allow the string to continue as normal over multiple lines
+	// Those quotes between the two lines is to allow the string to continue as normal over multiple lines
 	printf("Version size: %"PRIu32". Savedata lengths: %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32","
 		"%"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32", %"PRIu32"\n", (uint32_t)sizeof(crayon_savefile_version_t),
 		details->savedata.lengths[0], details->savedata.lengths[1], details->savedata.lengths[2],
@@ -435,7 +435,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details){
 }
 
 int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
-	//Only proceed if we can do something here
+	// Only proceed if we can do something here
 	int8_t status = crayon_savefile_save_device_status(details, details->save_device_id);
 	if(status != CRAYON_SF_STATUS_CURRENT_SF && status != CRAYON_SF_STATUS_OLD_SF_ROOM &&
 		status != CRAYON_SF_STATUS_NO_SF_ROOM){
@@ -447,7 +447,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 		return -1;
 	}
 
-	//If the savefile DNE somehow, this will fail
+	// If the savefile DNE somehow, this will fail
 	FILE *fp = fopen(savename, "rb");
 	free(savename);
 	if(!fp){
@@ -471,36 +471,36 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 
 	vmu_pkg_t pkg;
 	if(vmu_pkg_parse(data, &pkg)){
-		//CRC is incorrect
+		// CRC is incorrect
 		;
 	}
 
-	//Check to see if pkg.data_len is actually correct or not
+	// Check to see if pkg.data_len is actually correct or not
 	;
 
-	//Read the pkg data into my struct
+	// Read the pkg data into my struct
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, (uint8_t *)pkg.data, (uint32_t)pkg.data_len);
 
 	#elif defined(_arch_pc)
 
-	//Call the endian function on "data"
+	// Call the endian function on "data"
 	;
 
-	//Obtain the data length
+	// Obtain the data length
 	crayon_savefile_hdr_t hdr;
 
 	crayon_misc_encode_to_buffer((uint8_t*)&hdr.name, data, sizeof(hdr.name));
 	crayon_misc_encode_to_buffer((uint8_t*)&hdr.app_id, data + sizeof(hdr.name), sizeof(hdr.app_id));
 
-	//Either it has the wrong size or the app ids somehow don't match
-	//(The later should never trigger if you use this library right)
+	// Either it has the wrong size or the app ids somehow don't match
+	// (The later should never trigger if you use this library right)
 	if(strcmp(hdr.app_id, details->strings[CRAYON_SF_STRING_APP_ID])){
 		free(data);
 		return -1;
 	}
 
-	//Read the pkg data into my struct
-	//We use CRAYON_SF_HDR_SIZE to skip the header
+	// Read the pkg data into my struct
+	// We use CRAYON_SF_HDR_SIZE to skip the header
 	uint8_t deserialise_result = crayon_savefile_deserialise(details, data + CRAYON_SF_HDR_SIZE,
 		pkg_size - CRAYON_SF_HDR_SIZE);
 
@@ -510,14 +510,14 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 
 	#endif
 
-	//NOTE: We don't set the current_savefile bit even if the load was successful since the saved save is still old
+	// NOTE: We don't set the current_savefile bit even if the load was successful since the saved save is still old
 
 	free(data);
 	return deserialise_result;
 }
 
 int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
-	//Only proceed if we can actually save
+	// Only proceed if we can actually save
 	int8_t status = crayon_savefile_save_device_status(details, details->save_device_id);
 	if(status != CRAYON_SF_STATUS_CURRENT_SF && status != CRAYON_SF_STATUS_OLD_SF_ROOM &&
 		status != CRAYON_SF_STATUS_NO_SF_ROOM){
@@ -550,34 +550,17 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	memcpy(pkg.icon_pal, details->icon_palette, 32);
 	pkg.icon_data = details->icon_data;
 	pkg.eyecatch_type = details->eyecatcher_type;
-	pkg.eyecatch_data = details->eyecatcher_data;	//If the type is zero, this will be NULL anyways
+	pkg.eyecatch_data = details->eyecatcher_data;	// If the type is zero, this will be NULL anyways
 	pkg.data_len = details->savedata.size;
 	pkg.data = data;
 
 	int pkg_size;
-	uint8_t *pkg_out; //Allocated in function below
+	uint8_t *pkg_out; // Allocated in function below
 	vmu_pkg_build(&pkg, &pkg_out, &pkg_size);
 	
-	free(data);	//No longer needed
+	free(data);	// No longer needed
 
-	//Check if a file exists with that name, since we'll overwrite it.
-	// uint32_t bytes_freed = 0;
-	// if((fp = fopen(savename, "rb"))){
-	// 	fseek(fp, 0, SEEK_END);
-	// 	bytes_freed = ftell(fp);
-	// 	fseek(fp, 0, SEEK_SET);
-	// 	fclose(fp);
-	// }
-
-	//Make sure there's enough free space on the VMU.
-	// if(crayon_savefile_devices_free_space(details->save_device_id) + bytes_freed <
-	// 	crayon_savefile_bytes_to_blocks(pkg_size)){
-	// 	free(pkg_out);
-	// 	free(savename);
-	// 	return 1;
-	// }
-
-	//Can't open file for some reason
+	// Can't open file for some reason
 	fp = fopen(savename, "wb");
 	free(savename);
 	if(!fp){
@@ -613,7 +596,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 		offset += str_length;
 	}
 
-	//Endian-ify the data block (PC only)
+	// Endian-ify the data block (PC only)
 	;
 
 	fp = fopen(savename, "wb");
@@ -644,29 +627,37 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	return 0;
 }
 
-int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details){
-	//Device isn't present, can't do anything with it
-	if(!crayon_savefile_get_device_bit(details->present_devices, details->save_device_id)){
+int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details, int8_t save_device_id){
+	// Only proceed if we can actually save
+	int8_t status = crayon_savefile_save_device_status(details, save_device_id);
+	if(status == CRAYON_SF_STATUS_INVALID_SF || status == CRAYON_SF_STATUS_NO_DEVICE ||
+		status == CRAYON_SF_STATUS_NO_SF_FULL || status == CRAYON_SF_STATUS_NO_SF_ROOM){
 		return -1;
 	}
 
-	char *savename = crayon_savefile_get_full_path(details, details->save_device_id);
+	uint8_t result = 0;
+
+	#if defined(_arch_dreamcast)
+
+	maple_device_t *vmu;
+	vec2_s8_t p_and_s = crayon_peripheral_dreamcast_get_port_and_slot(save_device_id);
+	if(!(vmu = maple_enum_dev(p_and_s.x, p_and_s.y))){	// Device not present
+		return -1;
+	}
+
+	// I belive this function just takes the file name, or at least the name of it in /vmu/XX/
+	result = vmufs_delete(vmu, details->strings[CRAYON_SF_STRING_FILENAME]);
+
+	#elif defined (_arch_pc)
+
+	char *savename = crayon_savefile_get_full_path(details, save_device_id);
 	if(!savename){
 		return -1;
 	}
 
-	#if defined(_arch_dreamcast)
+	result = remove(savename);
 
-	if(!crayon_peripheral_has_function(MAPLE_FUNC_MEMCARD, details->save_device_id)){
-		free(savename);
-		return -1;
-	}
-	
-	//int vmufs_delete(maple_device_t *dev, const char *fn);
-
-	#elif defined (_arch_pc)
-
-	;
+	free(savename);
 
 	#else
 
@@ -674,16 +665,16 @@ int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details){
 
 	#endif
 
-	free(savename);
+	crayon_savefile_update_device_info(details, save_device_id);
 
-	return -1;
+	return result;
 }
 
 void crayon_savefile_free(crayon_savefile_details_t *details){
 	crayon_savefile_free_icon(details);
 	crayon_savefile_free_eyecatcher(details);
 
-	//Free up history
+	// Free up history
 	crayon_savefile_history_t *curr = details->history;
 	crayon_savefile_history_t *prev = curr;
 	while(curr){
@@ -695,7 +686,7 @@ void crayon_savefile_free(crayon_savefile_details_t *details){
 	details->history = NULL;
 	details->history_tail = NULL;
 
-	//Free up the actual save data;
+	// Free up the actual save data;
 	crayon_savefile_free_savedata(&details->savedata);
 
 	uint8_t i;
@@ -739,7 +730,7 @@ int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, in
 		return -1;
 	}
 
-	//Get the right bits
+	// Get the right bits
 	uint8_t present_device = details->present_devices & (1 << save_device_id);
 	uint8_t present_savefile = details->present_savefiles & (1 << save_device_id);
 	uint8_t upgradable_to_current = details->upgradable_to_current & (1 << save_device_id);
@@ -766,7 +757,7 @@ int8_t crayon_savefile_save_device_status(crayon_savefile_details_t *details, in
 		}
 		return CRAYON_SF_STATUS_OLD_SF_FULL;
 	}
-	else{	//If all of the above failed, the savefile must be invalid
+	else{	// If all of the above failed, the savefile must be invalid
 		return CRAYON_SF_STATUS_INVALID_SF;
 	}
 }
@@ -788,17 +779,17 @@ void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_
 	*device_bitmap |= 1 << save_device_id;
 }
 
-//Rounds the number down to nearest multiple of 512, then adds 1 if there's a remainder
-//(Function is only useful for Dreamcast)
+// Rounds the number down to nearest multiple of 512, then adds 1 if there's a remainder
+// (Function is only useful for Dreamcast)
 uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes){
 	return (bytes >> 9) + !!(bytes & ((1 << 9) - 1));
 }
 
-//I used the "vmu_pkg_build" function's source as a guide for this. Doesn't work with compressed saves
+// I used the "vmu_pkg_build" function's source as a guide for this. Doesn't work with compressed saves
 uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
 	#if defined(_arch_dreamcast)
 
-	//When vmu_eyecatch_size() is made non-static, switch over
+	// When vmu_eyecatch_size() is made non-static, switch over
 	#if 0
 
 	uint16_t eyecatcher_size = vmu_eyecatch_size();
@@ -822,7 +813,7 @@ uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
 
 	#endif
 
-	//Get the total number of bytes. Keep in mind we need to think about the icon/s and EC
+	// Get the total number of bytes. Keep in mind we need to think about the icon/s and EC
 	return CRAYON_SF_HDR_SIZE + (512 * details->icon_anim_count) + eyecatcher_size + details->savedata.size;
 
 	#elif defined(_arch_pc)
@@ -845,7 +836,7 @@ uint16_t crayon_savefile_user_string_length(uint8_t string_id){
 		
 			#elif defined(_arch_dreamcast)
 		
-			return 21 - 8;	//The 8 is the "/vmu/XX/" and the name itself can only be 13 chars (Last it null terminator)
+			return 21 - 8;	// The 8 is the /vmu/XX/ and the name itself can only be 13 chars (Last it null terminator)
 		
 			#else
 
@@ -872,13 +863,13 @@ uint16_t crayon_savefile_user_string_length(uint8_t string_id){
 void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer){
 	crayon_savefile_data_t data = details->savedata;
 
-	//Encode the version number
+	// Encode the version number
 	crayon_misc_encode_to_buffer(buffer, (uint8_t*)&details->latest_version, sizeof(crayon_savefile_version_t));
 	buffer += sizeof(crayon_savefile_version_t);
 
-	//Next encode all doubles, then floats, then unsigned 32-bit ints, then signed 32-bit ints
-	//Then 16-bit ints, 8-bit ints and finally the characters. No need to encode the lengths
-	//since the history can tell us that
+	// Next encode all doubles, then floats, then unsigned 32-bit ints, then signed 32-bit ints
+	// Then 16-bit ints, 8-bit ints and finally the characters. No need to encode the lengths
+	// since the history can tell us that
 	crayon_misc_encode_to_buffer(buffer, (uint8_t*)data.doubles, sizeof(double) * data.lengths[CRAYON_TYPE_DOUBLE]);
 	buffer += (sizeof(double) * data.lengths[CRAYON_TYPE_DOUBLE]);
 
@@ -909,36 +900,36 @@ void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buff
 	return;
 }
 
-//Assume the buffer has the correct endian-ness going into this
+// Assume the buffer has the correct endian-ness going into this
 int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length){
-	//Same as serialiser, but instead we extract the variables and version from the buffer
+	// Same as serialiser, but instead we extract the variables and version from the buffer
 	crayon_savefile_data_t *new_savedata = &details->savedata;
 
-	//Decode the version number
+	// Decode the version number
 	crayon_savefile_version_t loaded_version;
 	crayon_misc_encode_to_buffer((uint8_t*)&loaded_version, data, sizeof(crayon_savefile_version_t));
 
-	//Doing this makes future calculations easier
+	// Doing this makes future calculations easier
 	data += sizeof(crayon_savefile_version_t);
 	data_length -= sizeof(crayon_savefile_version_t);
 
-	//We'll also need to check if the version number is valid
+	// We'll also need to check if the version number is valid
 	if(loaded_version > details->latest_version || loaded_version == 0){
 		return -1;
 	}
 
-	//If its an older savefile, put it in the crayon_savefile_data_t format, make that union pointer array
-	//and call the user's upgrade function
+	// If its an older savefile, put it in the crayon_savefile_data_t format, make that union pointer array
+	// and call the user's upgrade function
 	if(loaded_version < details->latest_version){
 		crayon_savefile_data_t old_savedata;
 
-		//Sets all the lengths to zero and the pointers to null
+		// Sets all the lengths to zero and the pointers to null
 		memset(&old_savedata, 0, sizeof(crayon_savefile_data_t));
 
-		//Need to use history to find the lengths of all 9 arrays
+		// Need to use history to find the lengths of all 9 arrays
 		crayon_savefile_history_t *curr = details->history;
 		while(curr != NULL){
-			//If the variable exists in the loaded version, add it to our length
+			// If the variable exists in the loaded version, add it to our length
 			if(loaded_version >= curr->version_added && loaded_version < curr->version_removed){
 				old_savedata.lengths[curr->data_type] += curr->data_length;
 			}
@@ -956,13 +947,14 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 			(old_savedata.lengths[CRAYON_TYPE_SINT8] * sizeof(int8_t)) +
 			(old_savedata.lengths[CRAYON_TYPE_CHAR] * sizeof(char));
 
-		//The size is off, the savefile must have been tampered with
+		// The size is off, the savefile must have been tampered with
 		if(expected_size != data_length){
 			#if CRAYON_DEBUG == 1
 
 			printf("Deserial, wrong sizes: %"PRIu32" %"PRIu32"\n", expected_size, data_length);
 			
 			#endif
+
 			return -1;
 		}
 
@@ -979,7 +971,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 
 		void **array = malloc(sizeof(void*) * details->num_vars);
 
-		//Check if any of those mallocs failed, if so terminate
+		// Check if any of those mallocs failed, if so terminate
 		if(!old_savedata.doubles || !old_savedata.floats || !old_savedata.u32 || !old_savedata.s32 ||
 			!old_savedata.u16 || !old_savedata.s16 || !old_savedata.u8 || !old_savedata.s8 ||
 			!old_savedata.chars || !array){
@@ -990,17 +982,17 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 			return -1;
 		}
 
-		//Convert the buffer into our savedata struct
+		// Convert the buffer into our savedata struct
 		crayon_savefile_buffer_to_savedata(&old_savedata, data);
 
-		//Go through the history again, but now set the pointers for each variable. Note variables that DNE in
-		//This version should be set to NULL
-		//Also copy over the common vars from the old savedata to the new one
+		// Go through the history again, but now set the pointers for each variable. Note variables that DNE in
+		// This version should be set to NULL
+		// Also copy over the common vars from the old savedata to the new one
 		curr = details->history;
 		uint32_t i, index = 0;
 		uint32_t pointers[CRAYON_NUM_TYPES] = {0};
 		while(curr != NULL){
-			//If the variable exists in the loaded version
+			// If the variable exists in the loaded version
 			if(loaded_version >= curr->version_added && loaded_version < curr->version_removed){
 				switch(curr->data_type){
 					case CRAYON_TYPE_DOUBLE:
@@ -1084,7 +1076,7 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 					}
 				}
 			}
-			else{	//Set the pointer to NULL if it doesn't exist in the old savefile
+			else{	// Set the pointer to NULL if it doesn't exist in the old savefile
 				array[index] = NULL;
 			}
 
@@ -1092,13 +1084,13 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 			curr = curr->next;
 		}
 
-		//Call the user function to handle old to new savedata transfers
+		// Call the user function to handle old to new savedata transfers
 		(*details->upgrade_savefile_func)(array, loaded_version, details->latest_version);
 
 		#if CRAYON_DEBUG == 1
 
 		printf("OLD v%"PRIu32"\n", loaded_version);
-		//size update isn't needed for calculations, only to show correct value in function
+		// size update isn't needed for calculations, only to show correct value in function
 		old_savedata.size = sizeof(crayon_savefile_version_t) + (8 * old_savedata.lengths[0]) +
 		(4 * (old_savedata.lengths[1] + old_savedata.lengths[2] + old_savedata.lengths[3])) +
 		(2 * (old_savedata.lengths[4] + old_savedata.lengths[5])) + old_savedata.lengths[6] +
@@ -1108,14 +1100,14 @@ int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *
 
 		#endif
 
-		//Free the array
+		// Free the array
 		free(array);
 
-		//Free the old savedata arrays too
+		// Free the old savedata arrays too
 		crayon_savefile_free_savedata(&old_savedata);
 	}
-	else{	//If same version
-		//The size is wrong, savefile has been tampered with
+	else{	// If same version
+		// The size is wrong, savefile has been tampered with
 		if(details->savedata.size - sizeof(crayon_savefile_version_t) != data_length){
 			return -1;
 		}
@@ -1141,7 +1133,7 @@ uint32_t crayon_savefile_devices_free_space(int8_t device_id){
 
 	maple_device_t *vmu;
 	vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y);
-	if(!vmu){	//Device not found
+	if(!vmu){	// Device not found
 		return 0;
 	}
 
@@ -1149,7 +1141,7 @@ uint32_t crayon_savefile_devices_free_space(int8_t device_id){
 	
 	#elif defined(_arch_pc)
 
-	//Yeah, idk how to get system's remaining space size in C without exec/system
+	// Yeah, idk how to get system's remaining space size in C without exec/system
 	return INT32_MAX;
 
 	#else
@@ -1159,7 +1151,7 @@ uint32_t crayon_savefile_devices_free_space(int8_t device_id){
 	#endif
 }
 
-//It will construct the full string for you
+// It will construct the full string for you
 char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t save_device_id){
 	if(save_device_id < 0 || save_device_id >= CRAYON_SF_NUM_SAVE_DEVICES){
 		return NULL;
@@ -1167,7 +1159,7 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 
 	#if defined(_arch_dreamcast)
 
-	//The 3 comes from the "a0/" part
+	// The 3 comes from the "a0/" part
 	uint32_t length = __savefile_path_length + 3 + strlen(details->strings[CRAYON_SF_STRING_FILENAME]) + 1;
 	
 	#elif defined(_arch_pc)
@@ -1190,12 +1182,12 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 	#if defined(_arch_dreamcast)
 
 	vec2_s8_t port_and_slot = crayon_peripheral_dreamcast_get_port_and_slot(save_device_id);
-	if(port_and_slot.x == -1){	//Due to first return NULL, this should never trigger
+	if(port_and_slot.x == -1){	// Due to first return NULL, this should never trigger
 		free(path);
 		return NULL;
 	}
 
-	//Faster than constructing the string and then strcat-ing it
+	// Faster than constructing the string and then strcat-ing it
 	uint32_t curr_length = strlen(path);
 	path[curr_length    ] = port_and_slot.x + 'a';
 	path[curr_length + 1] = port_and_slot.y + '0';
@@ -1209,7 +1201,7 @@ char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t s
 	return path;
 }
 
-//NOTE: You should never need to access these variables directly. I'm only doing so for debugging purposes
+// NOTE: You should never need to access these variables directly. I'm only doing so for debugging purposes
 void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata){
 	#if CRAYON_DEBUG == 1
 
@@ -1313,9 +1305,9 @@ void crayon_savefile_buffer_to_savedata(crayon_savefile_data_t *data, uint8_t *b
 	return;
 }
 
-//This might be able to be optimised
+// This might be able to be optimised
 int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t save_device_id){
-	//0 for invalid savefile just incase we get an error
+	// 0 for invalid savefile just incase we get an error
 	details->savefile_versions[save_device_id] = 0;
 
 	char *savename = crayon_savefile_get_full_path(details, save_device_id);
@@ -1326,7 +1318,7 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	FILE *fp = fopen(savename, "rb");
 	free(savename);
 
-	//File DNE
+	// File DNE
 	if(!fp){
 		return -1;
 	}
@@ -1339,8 +1331,8 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	int pkg_size = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-	//Surely instead of doing the below, I can just read the header + version
-	//But then again, I wouldn't be able to do the CRC check
+	// Surely instead of doing the below, I can just read the header + version
+	// But then again, I wouldn't be able to do the CRC check
 	;
 
 	uint8_t *pkg_out = malloc(pkg_size);
@@ -1348,19 +1340,19 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	fclose(fp);
 
 	vmu_pkg_t pkg;
-	if(vmu_pkg_parse(pkg_out, &pkg)){	//CRC is incorrect
+	if(vmu_pkg_parse(pkg_out, &pkg)){	// CRC is incorrect
 		free(pkg_out);
 		return -1;
 	}
 
 	free(pkg_out);
 
-	//If the version IDs don't match, then this isn't the right savefile
+	// If the version IDs don't match, then this isn't the right savefile
 	if(strcmp(pkg.app_id, details->strings[CRAYON_SF_STRING_APP_ID])){
 		return -1;
 	}
 
-	//Check to confirm the savefile version is not newer than it should be
+	// Check to confirm the savefile version is not newer than it should be
 	crayon_misc_encode_to_buffer((uint8_t*)&sf_version, (uint8_t*)pkg.data, sizeof(crayon_savefile_version_t));
 
 	#elif defined(_arch_pc)
@@ -1372,12 +1364,12 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	fread(&sf_version, 4, 1, fp);
 	fclose(fp);
 
-	//Pass that sf_version and maybe "hdr.app_id" through our endian-ness function
+	// Pass that sf_version and maybe "hdr.app_id" through our endian-ness function
 	crayon_misc_endian_correction((uint8_t*)&hdr, sizeof(hdr));
 	crayon_misc_endian_correction((uint8_t*)&sf_version, sizeof(crayon_savefile_version_t));
 
-	//Either it has the wrong size or the app ids somehow don't match
-	//(The later should never trigger if you use this library right)
+	// Either it has the wrong size or the app ids somehow don't match
+	// (The later should never trigger if you use this library right)
 	if(strcmp(hdr.app_id, details->strings[CRAYON_SF_STRING_APP_ID])){
 		return -1;
 	}
@@ -1388,7 +1380,7 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 
 	#endif
 
-	//Its valid, so set the right version number
+	// Its valid, so set the right version number
 	details->savefile_versions[save_device_id] = sf_version;
 
 	return 0;
@@ -1408,7 +1400,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		return -1;
 	}
 
-	//We start by assuming it fails all conditions
+	// We start by assuming it fails all conditions
 	details->present_devices &= ~(1 << save_device_id);
 	details->present_savefiles &= ~(1 << save_device_id);
 	details->upgradable_to_current &= ~(1 << save_device_id);
@@ -1417,49 +1409,49 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 
 	#if defined(_arch_dreamcast)
 
-	//Check if device is a memory card
+	// Check if device is a memory card
 	if(!crayon_peripheral_has_function(MAPLE_FUNC_MEMCARD, save_device_id)){
 		return -1;
 	}
 
 	#endif
 
-	//Any device thats present gets set
+	// Any device thats present gets set
 	crayon_savefile_set_device_bit(&details->present_devices, save_device_id);
 
-	//Returns 0 if fine
-	//If check threw an error, either it failed to construct the path string, open the file
-	//Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
-	//So if the savefile does exist, then we say the device isn't present, else we check for space and see
+	// Returns 0 if fine
+	// If check threw an error, either it failed to construct the path string, open the file
+	// Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
+	// So if the savefile does exist, then we say the device isn't present, else we check for space and see
 	if(crayon_savefile_check_savedata(details, save_device_id)){
 		char *savename = crayon_savefile_get_full_path(details, save_device_id);
 		if(!savename){
 			return -1;
 		}
 
-		//Calculate the size of the savefile to make sure if we have enough space
+		// Calculate the size of the savefile to make sure if we have enough space
 		fp = fopen(savename, "rb");
 		free(savename);
-		if(!fp){	//This usually means the file doesn't exist
-			//Can't use details->savedata.size, doesn't include hdr and stuff
+		if(!fp){	// This usually means the file doesn't exist
+			// Can't use details->savedata.size, doesn't include hdr and stuff
 			if(crayon_savefile_get_savefile_size(details) <=
 				crayon_savefile_devices_free_space(save_device_id)){
 				crayon_savefile_set_device_bit(&details->upgradable_to_current, save_device_id);
 			}
 		}
-		else{	//File does exist, so it must be invalid if check failed
-			//We set present savefiles, even for invalid saves
+		else{	// File does exist, so it must be invalid if check failed
+			// We set present savefiles, even for invalid saves
 			crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 			fclose(fp);
 		}
 	}
 	else{
-		//Its a system requirement that the first sf version is 1 since 0 is used to mark invalid
+		// Its a system requirement that the first sf version is 1 since 0 is used to mark invalid
 		if(details->savefile_versions[save_device_id] == 0){
 			return -1;
 		}
 
-		//Even if we can't use it, we still show it
+		// Even if we can't use it, we still show it
 		crayon_savefile_set_device_bit(&details->present_savefiles, save_device_id);
 
 		if(details->savefile_versions[save_device_id] == details->latest_version){
@@ -1474,7 +1466,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 			
 			fp = fopen(savename, "rb");
 			free(savename);
-			if(!fp){	//Shouldn't occur
+			if(!fp){	// Shouldn't occur
 				return -1;
 			}
 
@@ -1484,10 +1476,10 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 
 			#if defined(_arch_dreamcast)
 
-			//Not a multiple of 512, fix it (Since we count in blocks and a block is 512 bytes)
+			// Not a multiple of 512, fix it (Since we count in blocks and a block is 512 bytes)
 			if(savefile_size % (1 << 9) != 0){
-				savefile_size &= ~((1 << 9) - 1);	//Rounds down to nearest multiple of 512
-				savefile_size += 512;	//Round up
+				savefile_size &= ~((1 << 9) - 1);	// Rounds down to nearest multiple of 512
+				savefile_size += 512;	// Round up
 			}
 
 			#endif
@@ -1497,7 +1489,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 				crayon_savefile_set_device_bit(&details->upgradable_to_current, save_device_id);
 			}
 		}
-		//Future and "zero" version savefiles are always not upgradable.
+		// Future and "zero" version savefiles are always not upgradable.
 	}
 
 	return 0;

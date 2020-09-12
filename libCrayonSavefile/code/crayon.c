@@ -36,11 +36,11 @@ vec2_s8_t crayon_peripheral_dreamcast_get_port_and_slot(int8_t save_device_id){
 uint8_t crayon_peripheral_dreamcast_get_screens(){
 	#if defined(_arch_dreamcast)
 
-	uint8_t screens = 0;	//a1a2b1b2c1c2d1d2
+	uint8_t screens = 0;	// a1a2b1b2c1c2d1d2
 
 	int i;
-	for(i = 0; i < 8; i++){	//8 because we can have 8 VMUs max
-		//Check if device contains this function bitmap
+	for(i = 0; i < 8; i++){	// 8 because we can have 8 VMUs max
+		// Check if device contains this function bitmap
 		if(crayon_peripheral_has_function(MAPLE_FUNC_LCD, i)){
 			screens |= (1 << i);
 		}
@@ -56,15 +56,15 @@ uint8_t crayon_peripheral_dreamcast_get_screens(){
 }
 
 void crayon_peripheral_vmu_display_icon(uint8_t vmu_bitmap, void *icon){
-	#ifdef _arch_dreamcast
+	#if defined(_arch_dreamcast)
 	
 	maple_device_t *vmu;
 	uint8_t i, j;
 	for(j = 0; j <= 3; j++){
 		for(i = 1; i <= 2; i++){
-			//a1a2b1b2c1c2d1d2
-			if((vmu_bitmap >> ((2 * j) + (i - 1))) & 1){	//We want to display on this VMU
-				if(!(vmu = maple_enum_dev(i, j))){	//Device not present
+			// a1a2b1b2c1c2d1d2
+			if((vmu_bitmap >> ((2 * j) + (i - 1))) & 1){	// We want to display on this VMU
+				if(!(vmu = maple_enum_dev(i, j))){	// Device not present
 					continue;
 				}
 				vmu_draw_lcd(vmu, icon);
@@ -72,12 +72,13 @@ void crayon_peripheral_vmu_display_icon(uint8_t vmu_bitmap, void *icon){
 		}
 	
 	}
+	
 	#endif
 
 	return;
 }
 
-//Returns true if device has certain function/s
+// Returns true if device has certain function/s
 uint8_t crayon_peripheral_has_function(uint32_t function, int8_t save_device_id){
 	#if defined(_arch_dreamcast)
 
@@ -85,17 +86,17 @@ uint8_t crayon_peripheral_has_function(uint32_t function, int8_t save_device_id)
 
 	vec2_s8_t port_and_slot = crayon_peripheral_dreamcast_get_port_and_slot(save_device_id);
 
-	//Invalid controller/port
+	// Invalid controller/port
 	if(port_and_slot.x < 0){
 		return 0;
 	}
 
-	//Make sure there's a device in the port/slot
+	// Make sure there's a device in the port/slot
 	if(!(vmu = maple_enum_dev(port_and_slot.x, port_and_slot.y))){
 		return 0;
 	}
 
-	//Check the device is valid and it has a certain function
+	// Check the device is valid and it has a certain function
 	if(!vmu->valid || !(vmu->info.functions & function)){
 		return 0;
 	}

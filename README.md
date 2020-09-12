@@ -7,8 +7,8 @@ If you make a savefile in version X, then it will load in version X and beyond, 
 
 ### Repository structure
 
-- Demo folder contains some demos of the program at each version of its life.
 - The libCrayonSavefile folder contains the source code for the savefile system and allows you to build a library file that can be linked into any project
+- Demo folder contains some demos of the program at each version of its life. You can also build the library from there
 
 ### Savefile structure
 
@@ -26,6 +26,11 @@ Dreamcast depends on "KallistiOS". Setup tutorials can be found here
 - http://gamedev.allusion.net/softprj/kos/setup-wsl.php
 - http://gamedev.allusion.net/softprj/kos/setup-linux.php
 - http://gamedev.allusion.net/softprj/kos/setup-osx.php
+
+For Dreamcast you'll also need cdi4dc. Download and build this program
+- https://github.com/Kazade/img4dc/tree/master/cdi4dc
+
+Copy the executable into one of your path folders, this will allow the cdi4dc program to be callable from anywhere on your system.
 
 
 ### Building/SConstruct
