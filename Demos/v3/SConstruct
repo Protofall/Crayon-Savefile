@@ -90,10 +90,9 @@ for e in env:
 	# Major, Minor, Patch version numbers
 	# We need the CC and CXX checks for pc because this flag is only for GCC/G++
 	our_version = list(map(int, e['CCVERSION'].split('.')))
-	# for k, v in our_version and colour_version if k >= v	# How do I do this in an if statement?
-	if our_version[0] >= colour_version[0] and our_version[1] >= colour_version[1] and our_version[2] >= colour_version[2]:
-		if e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++'):
-			e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
+	if all([a >= b for a, b in zip(our_version, colour_version)]) and
+		(e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
+		e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
 
 # ------------- FUNCTION 2 END ------------- #
 
