@@ -1,6 +1,11 @@
 program_name = 'Crayon-Savefile-Demo-v3'
 ip_bin_path = ''
 
+# The #/ means relative to the calling script, so even in
+# SConscript it works from this file rather than relative
+lib_folder = '#/../../libCrayonSavefile/'
+include_path = lib_folder + 'include/'
+
 # ------------- FUNCTION 1 BEGIN ------------- #
 
 # Get arguments in the format we want
@@ -26,16 +31,15 @@ if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False an
 
 	exit(1)
 
+# Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
+# extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
+# args = extern_cmds.input_handling(ARGUMENTS)
+
 # ------------- FUNCTION 1 END ------------- #
 
 # ------------- FUNCTION 2 BEGIN ------------- #
 
 # Create the environments
-# The #/ means relative to the calling script, so even in
-# SConscript it works from this file rather than relative
-lib_folder = '#/../../libCrayonSavefile/'
-include_path = lib_folder + 'include/'
-
 import os
 env = list()
 if PLATFORM == 'dreamcast' or PLATFORM == 'all':
@@ -94,6 +98,8 @@ for e in env:
 		(e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
 		e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
 
+# env = extern_cmds.create_builders(args,)
+
 # ------------- FUNCTION 2 END ------------- #
 
 lib_dict = SConscript(lib_folder + 'SConstruct')
@@ -143,3 +149,5 @@ for e in env:
 			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
 		cdi = e.Command('$PROG_DIR/${PROG_NAME}.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
+
+# env.Command(target,source,"./scripts/run_my_script $TARGET $SOURCE")
