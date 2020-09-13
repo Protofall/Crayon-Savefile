@@ -43,6 +43,10 @@ specific_platform = list()
 if PLATFORM == 'dreamcast' or PLATFORM == 'all':
 	env.append(Environment(ENV = os.environ, CPPPATH = include_path, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
 
+	env[-1]['CODE_DIR'] = 'code'
+	env[-1]['CDFS_DIR'] = 'cdfs'
+	env[-1]['PROG_NAME'] = program_name
+
 	# Making sure we use the right prefix and suffix
 	env[-1]['LIBPREFIX'] = 'lib'
 	env[-1]['LIBSUFFIX'] = '.a'
@@ -69,6 +73,10 @@ from sys import platform
 if PLATFORM == 'pc' or PLATFORM == 'all':
 	env.append(Environment(ENV = os.environ, CPPPATH = include_path))	#Apparently some ppl need that ENV for CCVERSION
 
+	env[-1]['CODE_DIR'] = 'code'
+	env[-1]['CDFS_DIR'] = 'cdfs'
+	env[-1]['PROG_NAME'] = program_name
+
 	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 	# Major, Minor, Patch version numbers
 	# We need the CC and CXX checks because this flag is only for GCC/G++
@@ -90,8 +98,6 @@ if PLATFORM == 'pc' or PLATFORM == 'all':
 # ------------- FUNCTION 2 END ------------- #
 
 lib_dict = SConscript(lib_folder + 'SConstruct')
-cdfs_dir = 'cdfs/'
-code_dir = 'code/'
 
 import sys
 for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two lists
@@ -107,42 +113,39 @@ for e, p in zip(env, specific_platform):	#zip stops at the shorter of the two li
 	if DEBUG == True:
 		e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
 
-	build_dir = 'build/' + p + '/'
-	prog_dir = 'program/' + p + '/'
+	e['BUILD_DIR'] = 'build/' + p
+	e['PROG_DIR'] = 'program/' + p
+	
 	# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
 	# example", this part right here is NOT the best practice. What you should actually do is have an
-	# SConscript file in #/code/ and call it with variant_dir parameter set to $BUILD_DIR. Then that
+	# SConscript file in code/ and call it with variant_dir parameter set to $BUILD_DIR. Then that
 	# script contains the code below this VariantDir call. The way its currently setup can be confusing
 	# and error-prone. The reasons I'm not doing that here is because I want everything in one file and
 	# people might be confused why an SConscript file is in their code folder, so this way people can
 	# just see this SConstruct file and know "That's the build file". Also if I did this before the
 	# SConscript call then it would mess that up
-	e.VariantDir(build_dir, code_dir, duplicate=0)	# Kind of moves over the processing for the code
-													# directory to our build dir duplicate=0 means it
-													# won't duplicate the src files
-	e.VariantDir(prog_dir, build_dir, duplicate=0)
+	e.VariantDir('$BUILD_DIR', '$CODE_DIR', duplicate=0)	# Kind of moves over the processing for the code
+															# directory to our build dir duplicate=0 means it
+															# won't duplicate the src files
 
-
-	src_files = Glob(build_dir + '*.c') # We have to specify the build path instead of the real one
+	src_files = e.Glob('$BUILD_DIR/*.c') # We have to specify the build path instead of the real one
 	if p == 'linux' or p == 'mac' or p == 'windows':
-		target_prog = '#/program/' + p + '/' + program_name
-		e.Program(target_prog, src_files, LIBS = lib, LIBPATH = lib_path)
+		e.Program('$PROG_DIR/$PROG_NAME', src_files, LIBS = lib, LIBPATH = lib_path)
 	elif p == 'dreamcast':
-		rom_img = e.Command(build_dir + 'romdisk_boot.img', 'romdisk_boot/',
+		rom_img = e.Command('$BUILD_DIR/romdisk_boot.img', 'romdisk_boot/',
 			'$KOS_GENROMFS -f $TARGET -d $SOURCE')
-		src_files.append(e.Command(build_dir + 'romdisk_boot.o', rom_img,
+		src_files.append(e.Command('$BUILD_DIR/romdisk_boot.o', rom_img,
 			'$KOS_BASE/utils/bin2o/bin2o $SOURCE romdisk_boot $TARGET'))
 		# The source files list can contain c files and objects
-		elf = e.Program(build_dir + program_name, src_files, LIBS = lib, LIBPATH = lib_path)
+		elf = e.Program('$BUILD_DIR/${PROG_NAME}', src_files, LIBS = lib, LIBPATH = lib_path)
 		# e.Install(prog_dir, elf)	#Some people want the elf instead
-		binary = e.Command(build_dir + program_name + '.bin', elf,
+		binary = e.Command('$BUILD_DIR/${PROG_NAME}.bin', elf,
 			'sh-elf-objcopy -R .stack -O binary $SOURCE $TARGET')
-		scrambled = e.Command(build_dir + '1ST_READ.BIN', binary,
+		scrambled = e.Command('$CDFS_DIR/1ST_READ.BIN', binary,
 			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
-		cdfs_scrambled = e.Install(cdfs_dir, scrambled)
+		# cdfs_scrambled = e.Install('$CDFS_DIR/', scrambled)
 		# Iso depends on cdfs_scrambled, but we pass in "cdfs/"" instead of the source/s
-		e['CDFS'] = 'cdfs/'
-		iso = e.Command(build_dir + program_name + '.iso', cdfs_scrambled,
-			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS')
-		cdi = e.Command(prog_dir + program_name + '.cdi', iso,
+		iso = e.Command('$BUILD_DIR/${PROG_NAME}.iso', scrambled,
+			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
+		cdi = e.Command('$PROG_DIR/${PROG_NAME}.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
