@@ -8,11 +8,11 @@
 
 #include <crayon_savefile/crayon.h>
 
-#ifdef _arch_dreamcast
+#if defined(_arch_dreamcast)
 
 #include <dc/pvr.h>
 
-pvr_ptr_t font_tex;
+extern pvr_ptr_t font_tex;
 
 void font_init();
 

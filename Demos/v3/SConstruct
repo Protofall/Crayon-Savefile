@@ -1,107 +1,25 @@
+lib_folder = '../../libCrayonSavefile/'
+
+paths = dict()
+paths['IP_BIN'] = ''
+paths['CRAYON_SF_BASE'] = lib_folder + 'include/'
 program_name = 'Crayon-Savefile-Demo-v3'
-ip_bin_path = ''
-
-# The #/ means relative to the calling script, so even in
-# SConscript it works from this file rather than relative
-lib_folder = '#/../../libCrayonSavefile/'
-include_path = lib_folder + 'include/'
-
-# ------------- FUNCTION 1 BEGIN ------------- #
-
-# Get arguments in the format we want
-PLATFORM = ARGUMENTS.get('PLATFORM')
-DEBUG = ARGUMENTS.get('DEBUG', '0').lower()	# If var not present, default to False
-if DEBUG == 'true' or DEBUG == '1':
-	DEBUG = True
-if DEBUG == 'false' or DEBUG == '0':
-	DEBUG = False
-
-# Check if arguments are valid
-supported_platforms = ['dreamcast', 'pc', 'all']
-if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False and DEBUG != True):
-	print("""
-	Please specify the target platform to compile this project for. You can also
-	optionally enable debug flags. By default debug is false.
-
-	eg. `scons PLATFORM=dreamcast DEBUG=false`.
-	""")
-	print('\tSupported platforms are:')
-	for p in supported_platforms:
-		print('\t- ' + p)
-
-	exit(1)
 
 # Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
 # extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
 # args = extern_cmds.input_handling(ARGUMENTS)
 
-# ------------- FUNCTION 1 END ------------- #
+# Import our helper functions
+import sys
+sys.path.insert(1, lib_folder)	# This will But our path 2nd, right behind the local path
+import builder_functions as bf
 
-# ------------- FUNCTION 2 BEGIN ------------- #
+ARGUMENTS = bf.input_handling(ARGUMENTS)
 
 # Create the environments
-import os
-env = list()
-if PLATFORM == 'dreamcast' or PLATFORM == 'all':
-	env.append(Environment(ENV = os.environ, CPPPATH = include_path, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
+env = bf.create_builders(ARGUMENTS, paths, program_name)
 
-	# Making sure we use the right prefix and suffix
-	env[-1]['LIBPREFIX'] = 'lib'
-	env[-1]['LIBSUFFIX'] = '.a'
-	env[-1]['OBJSUFFIX'] = '.o'	# Windows has .obj
-	env[-1]['PROGSUFFIX'] = '.elf'
-
-	# Fix this later, here's a hack for now
-	env[-1]['KOS_BASE'] = env[-1]['ENV']['KOS_BASE']
-	env[-1]['KOS_GENROMFS'] = env[-1]['ENV']['KOS_GENROMFS']
-
-	# Location of IP.BIN
-	env[-1]['IP_DIR'] = ip_bin_path + 'IP.BIN'
-
-	# Add the platform
-	env[-1]['PLATFORM'] = 'dreamcast'
-	env[-1]['SPECIFIC_PLATFORM'] = env[-1]['PLATFORM']
-
-from sys import platform
-if PLATFORM == 'pc' or PLATFORM == 'all':
-	env.append(Environment(ENV = os.environ, CPPPATH = include_path))	#Apparently some ppl need that ENV for CCVERSION
-
-	# Add the platform
-	env[-1]['PLATFORM'] = 'pc'
-	if platform.startswith('linux') == True:
-		env[-1]['SPECIFIC_PLATFORM'] = 'linux'
-	elif platform == 'win32':
-		env[-1]['SPECIFIC_PLATFORM'] = 'windows'
-	elif platform == 'darwin':
-		env[-1]['SPECIFIC_PLATFORM'] = 'mac'
-	else:
-		print('Platform "' + platform + '" is not supported')
-		exit(1)
-
-colour_version = [4, 9, 0]
-
-# Set some env vars for all envs
-for e in env:
-	e['CODE_DIR'] = 'code'
-	e['CDFS_DIR'] = 'cdfs'
-	e['PROG_NAME'] = program_name
-
-	#Add in some cflags if in debug mode
-	if DEBUG == True:
-		e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
-
-	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
-	# Major, Minor, Patch version numbers
-	# We need the CC and CXX checks for pc because this flag is only for GCC/G++
-	our_version = list(map(int, e['CCVERSION'].split('.')))
-	if all([a >= b for a, b in zip(our_version, colour_version)]) and
-		(e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
-		e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
-
-# env = extern_cmds.create_builders(args,)
-
-# ------------- FUNCTION 2 END ------------- #
-
+# Build the lib/nodes
 lib_dict = SConscript(lib_folder + 'SConstruct')
 
 import sys

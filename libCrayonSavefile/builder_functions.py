@@ -1,6 +1,9 @@
 def get_supported_platforms():
 	return ['dreamcast', 'pc', 'all']
 
+def my_function(a):
+	print("Hello from a function " + a)
+
 # Ch 10.2 has info on multiple values for one arg key value
 	# 10.2.2 details help on args
 	# Variables('custom.py', ARGUMENTS) means the stuff from ARGUMENTS will override custom.py
@@ -12,15 +15,18 @@ def get_supported_platforms():
 	# 10.2.6 is useful for unknown var prevention
 def input_handling(args):
 	platform = args.get('PLATFORM')
-	debug = args.get('DEBUG', '0').lower()	# If var not present, default to False
+	debug = str(args.get('DEBUG', '0')).lower()	# If var not present, default to False
 	if debug == 'true' or debug == '1':
-		debug = True
+		args['DEBUG'] = True
 	if debug == 'false' or debug == '0':
-		debug = False
+		args['DEBUG'] = False
 
 	# Check if arguments are valid
 	supported_platforms = get_supported_platforms()
-	if platform == None or platform not in supported_platforms or (debug != False and debug != True):
+	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True or False):
+		# Consider using Chapter 9.1, help
+		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
+
 		print("""
 		Please specify the target platform to compile this project for. You can also
 		optionally enable debug flags. By default debug is false.
@@ -33,16 +39,16 @@ def input_handling(args):
 
 		exit(1)
 
-	return {'PLATFORM': platform, 'DEBUG': debug}
+	return args
 
-# Extra args, dict of paths, dict of CPPFLAGS, libs, etc
-def create_builders(args)
-	# Create the environments
+# from SCons.Script import *	# Needed so we can use scons stuff like builders
+
+def create_builders(args, paths, program_name):
+	# from SCons.Script import *
 	import os
 	env = list()
 	if args['PLATFORM'] == 'dreamcast' or args['PLATFORM'] == 'all':
-		env.append(Environment(ENV = os.environ, CPPPATH = include_path, CC = 'kos-cc',
-			CXX = 'kos-c++', AR = 'kos-ar'))
+		env.append(Environment(ENV = os.environ, CPPPATH = paths['CRAYON_SF_BASE'], CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
 
 		# Making sure we use the right prefix and suffix
 		env[-1]['LIBPREFIX'] = 'lib'
@@ -55,7 +61,7 @@ def create_builders(args)
 		env[-1]['KOS_GENROMFS'] = env[-1]['ENV']['KOS_GENROMFS']
 
 		# Location of IP.BIN
-		env[-1]['IP_DIR'] = ip_bin_path + 'IP.BIN'
+		env[-1]['IP_DIR'] = paths['IP_BIN'] + 'IP.BIN'
 
 		# Add the platform
 		env[-1]['PLATFORM'] = 'dreamcast'
@@ -63,7 +69,7 @@ def create_builders(args)
 
 	from sys import platform
 	if args['PLATFORM'] == 'pc' or args['PLATFORM'] == 'all':
-		env.append(Environment(ENV = os.environ, CPPPATH = include_path))	#Apparently some ppl need that ENV for CCVERSION
+		env.append(Environment(ENV = os.environ, CPPPATH = paths['CRAYON_SF_BASE']))	#Apparently some ppl need that ENV for CCVERSION
 
 		# Add the platform
 		env[-1]['PLATFORM'] = 'pc'
@@ -87,12 +93,14 @@ def create_builders(args)
 
 		#Add in some cflags if in debug mode
 		if args['DEBUG'] == True:
+			# Wformat level 2 has extra checks over standard.
+			# no-common is where two files define the same global var when they should be seperate
+			# g3 is like g, but it includes macro information
 			e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
 
 		# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
 		# Major, Minor, Patch version numbers
 		# We need the CC and CXX checks for pc because this flag is only for GCC/G++
 		our_version = list(map(int, e['CCVERSION'].split('.')))
-		if all([a >= b for a, b in zip(our_version, colour_version)]) and
-			(e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
+		if all([a >= b for a, b in zip(our_version, colour_version)]) and (e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
 			e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
