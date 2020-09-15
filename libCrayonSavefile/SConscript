@@ -1,21 +1,12 @@
-# Import our helper functions
-import builder_functions as bf
-
-paths = dict()
-paths['IP_BIN'] = ''
-paths['CRAYON_SF_BASE'] = 'include'
-program_name = ''
-
-ARGUMENTS = bf.input_handling(ARGUMENTS)	#Process our arguments
-env = bf.create_builders(ARGUMENTS, paths, program_name)
+Import('envs')
 
 # Create our library/s
 lib_dict = dict()
-platforms = bf.get_supported_platforms()
-for e in env:
-	# Check to see if specific platform is set
-	print("WIP")
-
+for e_old in envs:
+	# We only need this one inc, so lets override the previous incs
+	e = e_old.Clone()
+	e['CPPPATH'] = e['CRAYON_SF_BASE'] + 'include/crayon_savefile'
+	
 	#Add in some cflags if in debug mode
 	if ARGUMENTS['DEBUG'] == True:
 		e.AppendUnique(CPPDEFINES = [{'CRAYON_DEBUG':1}])
@@ -25,12 +16,11 @@ for e in env:
 		# no-unused-parameter disables said check
 
 	build_dir = 'build/'+ e['SPECIFIC_PLATFORM']
-	# print(build_dir)
 	e.VariantDir(build_dir, 'code', duplicate=0)	# Kind of moves over the processing for the code
 													# directory to our build dir duplicate=0 means it
 													# won't duplicate the src files
 
 	prog_files = Glob(build_dir + '/*.c') # We have to specify the build path instead of the real one
-	lib_dict[e['SPECIFIC_PLATFORM']] = e.Library(target = 'lib/' + e['SPECIFIC_PLATFORM'] + '/CrayonSavefile', source = prog_files)
+	lib_dict[e['SPECIFIC_PLATFORM']] = e.Library(target = 'lib/${SPECIFIC_PLATFORM}/CrayonSavefile', source = prog_files)
 
 Return('lib_dict')

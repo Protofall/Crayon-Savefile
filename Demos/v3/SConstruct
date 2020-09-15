@@ -1,9 +1,11 @@
 lib_folder = '../../libCrayonSavefile/'
+lib_folder_scons = '#/' + lib_folder
 
-paths = dict()
-paths['IP_BIN'] = ''
-paths['CRAYON_SF_BASE'] = lib_folder + 'include/'
-program_name = 'Crayon-Savefile-Demo-v3'
+import os
+our_vars = dict()
+our_vars['IP_BIN_DIR'] = './'
+our_vars['CRAYON_SF_BASE'] = lib_folder_scons
+our_vars['PROG_NAME'] = 'Crayon-Savefile-Demo-v3'
 
 # Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
 # extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
@@ -17,13 +19,13 @@ import builder_functions as bf
 ARGUMENTS = bf.input_handling(ARGUMENTS)
 
 # Create the environments
-env = bf.create_builders(ARGUMENTS, paths, program_name)
+envs = bf.create_builders(ARGUMENTS, our_vars)
 
 # Build the lib/nodes
-lib_dict = SConscript(lib_folder + 'SConscript')
+lib_dict = SConscript(lib_folder + 'SConscript', exports = 'envs')
 
 import sys
-for e in env:
+for e in envs:
 	try:
 		lib = lib_dict[e['SPECIFIC_PLATFORM']]
 	except KeyError:
@@ -64,7 +66,7 @@ for e in env:
 			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
 		# Iso depends on cdfs_scrambled, but we pass in "cdfs/"" instead of the source/s
 		iso = e.Command('$BUILD_DIR/${PROG_NAME}.iso', scrambled,
-			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
+			'genisoimage -G $IP_BIN_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
 		cdi = e.Command('$PROG_DIR/${PROG_NAME}.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
 

@@ -1,1 +1,11 @@
-SConscript('SConscript')
+# Import our helper functions
+import builder_functions as bf
+ARGUMENTS = bf.input_handling(ARGUMENTS)
+
+# Create the environments
+our_vars = dict()
+our_vars['CRAYON_SF_BASE'] = './'
+# our_vars['CRAYON_SF_HDRS'] = 'include/crayon_savefile'
+envs = bf.create_builders(ARGUMENTS, our_vars)
+
+SConscript('SConscript', exports = 'envs')

@@ -44,12 +44,12 @@ def input_handling(args):
 
 	return args
 
-def create_builders(args, paths, program_name):
+# def create_builders(args, paths, program_name):
+def create_builders(args, our_vars):
 	import os
 	env = list()
 	if args['PLATFORM'] == 'dreamcast' or args['PLATFORM'] == 'all':
-		print('\tIts: ' + paths['CRAYON_SF_BASE'])
-		env.append(Environment(ENV = os.environ, CPPPATH = paths['CRAYON_SF_BASE'], CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
+		env.append(Environment(ENV = os.environ, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
 
 		# Making sure we use the right prefix and suffix
 		env[-1]['LIBPREFIX'] = 'lib'
@@ -62,7 +62,8 @@ def create_builders(args, paths, program_name):
 		env[-1]['KOS_GENROMFS'] = env[-1]['ENV']['KOS_GENROMFS']
 
 		# Location of IP.BIN
-		env[-1]['IP_DIR'] = paths['IP_BIN'] + 'IP.BIN'
+		if 'IP_BIN_DIR' in our_vars:
+			env[-1]['IP_BIN_DIR'] = our_vars['IP_BIN_DIR'] + 'IP.BIN'
 
 		# Add the platform
 		env[-1]['PLATFORM'] = 'dreamcast'
@@ -70,7 +71,7 @@ def create_builders(args, paths, program_name):
 
 	from sys import platform
 	if args['PLATFORM'] == 'pc' or args['PLATFORM'] == 'all':
-		env.append(Environment(ENV = os.environ, CPPPATH = paths['CRAYON_SF_BASE']))	#Apparently some ppl need that ENV for CCVERSION
+		env.append(Environment(ENV = os.environ))	#Apparently some ppl need that ENV for CCVERSION
 
 		# Add the platform
 		env[-1]['PLATFORM'] = 'pc'
@@ -88,9 +89,19 @@ def create_builders(args, paths, program_name):
 
 	# Set some env vars for all envs
 	for e in env:
+		# Ensure CRAYON_SF_BASE is set
+		if 'CRAYON_SF_BASE' in our_vars:
+			e['CRAYON_SF_BASE'] = our_vars['CRAYON_SF_BASE']
+			# e.AppendUnique(CPPPATH = ['$CRAYON_SF_BASE'])	# Doesn't seem to be nessisary, but keeping just incase
+			e.AppendUnique(CPPPATH = ['$CRAYON_SF_BASE/include/'])
+		else:
+			print('CRAYON_SF_BASE is missing, please add the path')
+			exit(1)
+
 		e['CODE_DIR'] = 'code'
 		e['CDFS_DIR'] = 'cdfs'
-		e['PROG_NAME'] = program_name
+		if 'PROG_NAME' in our_vars:
+			e['PROG_NAME'] = our_vars['PROG_NAME']
 
 		#Add in some cflags if in debug mode
 		if args['DEBUG'] == True:
