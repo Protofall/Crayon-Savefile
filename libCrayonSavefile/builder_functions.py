@@ -1,3 +1,6 @@
+# Needed so we can use scons stuff like builders
+from SCons.Script import *
+
 def get_supported_platforms():
 	return ['dreamcast', 'pc', 'all']
 
@@ -23,7 +26,7 @@ def input_handling(args):
 
 	# Check if arguments are valid
 	supported_platforms = get_supported_platforms()
-	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True or False):
+	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True and args['DEBUG'] != False):
 		# Consider using Chapter 9.1, help
 		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
 
@@ -41,13 +44,11 @@ def input_handling(args):
 
 	return args
 
-# from SCons.Script import *	# Needed so we can use scons stuff like builders
-
 def create_builders(args, paths, program_name):
-	# from SCons.Script import *
 	import os
 	env = list()
 	if args['PLATFORM'] == 'dreamcast' or args['PLATFORM'] == 'all':
+		print('\tIts: ' + paths['CRAYON_SF_BASE'])
 		env.append(Environment(ENV = os.environ, CPPPATH = paths['CRAYON_SF_BASE'], CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
 
 		# Making sure we use the right prefix and suffix
@@ -104,3 +105,5 @@ def create_builders(args, paths, program_name):
 		our_version = list(map(int, e['CCVERSION'].split('.')))
 		if all([a >= b for a, b in zip(our_version, colour_version)]) and (e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
 			e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
+
+	return env

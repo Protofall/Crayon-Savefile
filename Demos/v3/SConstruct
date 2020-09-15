@@ -20,14 +20,14 @@ ARGUMENTS = bf.input_handling(ARGUMENTS)
 env = bf.create_builders(ARGUMENTS, paths, program_name)
 
 # Build the lib/nodes
-lib_dict = SConscript(lib_folder + 'SConstruct')
+lib_dict = SConscript(lib_folder + 'SConscript')
 
 import sys
 for e in env:
 	try:
 		lib = lib_dict[e['SPECIFIC_PLATFORM']]
 	except KeyError:
-		print('Somehow lib file for "' + specific_platform +'" cannot be found', file = sys.stderr)
+		print('Somehow lib file for "' + e['SPECIFIC_PLATFORM'] +'" cannot be found', file = sys.stderr)
 		exit(1)
 
 	lib_path = lib_folder + 'lib/' + e['SPECIFIC_PLATFORM'] +'/'
