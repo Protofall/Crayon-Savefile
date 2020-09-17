@@ -1,11 +1,31 @@
 # Needed so we can use scons stuff like builders
 from SCons.Script import *
 
-def get_supported_platforms():
+def get_supported_platforms_old():
 	return ['dreamcast', 'pc', 'all']
 
-def my_function(a):
-	print("Hello from a function " + a)
+def get_supported_platforms():
+	return ['dreamcast', 'pc']
+
+# def valid_platform(key, val, env):
+#     if not val in get_supported_platforms():
+#         raise Exception("Invalid platform '%s'" % val)
+
+#Might need a validator to set platform
+def input_logic(args):
+	# v = Variables('#/build_args.py', args)
+	v = Variables(None, args)
+	v.AddVariables(
+		ListVariable('PLATFORMS',
+					help = "The platforms we want to build",
+					default = 'all',
+					names = get_supported_platforms()),
+		BoolVariable('DEBUG',
+					help = "Build in debug mode",
+					default = 0),
+	)
+
+	return v
 
 # Ch 10.2 has info on multiple values for one arg key value
 	# 10.2.2 details help on args
@@ -25,7 +45,7 @@ def input_handling(args):
 		args['DEBUG'] = False
 
 	# Check if arguments are valid
-	supported_platforms = get_supported_platforms()
+	supported_platforms = get_supported_platforms_old()
 	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True and args['DEBUG'] != False):
 		# Consider using Chapter 9.1, help
 		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
@@ -40,7 +60,7 @@ def input_handling(args):
 		for p in supported_platforms:
 			print('\t- ' + p)
 
-		exit(1)
+		Exit(1)
 
 	return args
 
@@ -83,7 +103,7 @@ def create_builders(args, our_vars):
 			env[-1]['SPECIFIC_PLATFORM'] = 'mac'
 		else:
 			print('Platform "' + platform + '" is not supported')
-			exit(1)
+			Exit(1)
 
 	colour_version = [4, 9, 0]
 
@@ -96,7 +116,7 @@ def create_builders(args, our_vars):
 			e.AppendUnique(CPPPATH = ['$CRAYON_SF_BASE/include/'])
 		else:
 			print('CRAYON_SF_BASE is missing, please add the path')
-			exit(1)
+			Exit(1)
 
 		e['CODE_DIR'] = 'code'
 		e['CDFS_DIR'] = 'cdfs'

@@ -2,11 +2,10 @@ Import('envs')
 
 # Create our library/s
 lib_dict = dict()
-for e_old in envs:
-	# We only need this one inc, so lets override the previous incs
-	e = e_old.Clone()
+for env in envs:
+	e = env
 	e['CPPPATH'] = e['CRAYON_SF_BASE'] + 'include/crayon_savefile'
-	
+
 	#Add in some cflags if in debug mode
 	if ARGUMENTS['DEBUG'] == True:
 		e.AppendUnique(CPPDEFINES = [{'CRAYON_DEBUG':1}])
@@ -21,6 +20,14 @@ for e_old in envs:
 													# won't duplicate the src files
 
 	prog_files = Glob(build_dir + '/*.c') # We have to specify the build path instead of the real one
+	
+	#Change the paths just so our output is nice
+	# old_path = e['CPPPATH']
+	# e['CPPPATH'] = e['CRAYON_SF_BASE'] + 'include/crayon_savefile'
+	# print(e['CPPPATH'])
+	
 	lib_dict[e['SPECIFIC_PLATFORM']] = e.Library(target = 'lib/${SPECIFIC_PLATFORM}/CrayonSavefile', source = prog_files)
+	
+	# e['CPPPATH'] = old_path
 
 Return('lib_dict')

@@ -1,11 +1,11 @@
 lib_folder = '../../libCrayonSavefile/'
 lib_folder_scons = '#/' + lib_folder
 
-import os
 our_vars = dict()
 our_vars['IP_BIN_DIR'] = './'
 our_vars['CRAYON_SF_BASE'] = lib_folder_scons
-our_vars['PROG_NAME'] = 'Crayon-Savefile-Demo-v3'
+import os
+our_vars['PROG_NAME'] = 'Crayon-Savefile-Demo-' + os.path.basename(os.getcwd()) #Name of host folder
 
 # Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
 # extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
@@ -13,7 +13,7 @@ our_vars['PROG_NAME'] = 'Crayon-Savefile-Demo-v3'
 
 # Import our helper functions
 import sys
-sys.path.insert(1, lib_folder)	# This will But our path 2nd, right behind the local path
+sys.path.insert(1, lib_folder)	# This will put our path 2nd, right behind the local path
 import builder_functions as bf
 
 ARGUMENTS = bf.input_handling(ARGUMENTS)

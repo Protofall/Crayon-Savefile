@@ -1,11 +1,33 @@
 # Import our helper functions
 import builder_functions as bf
-ARGUMENTS = bf.input_handling(ARGUMENTS)
+# ARGUMENTS = bf.input_handling(ARGUMENTS)
+v = bf.input_logic(ARGUMENTS)
 
-# Create the environments
-our_vars = dict()
-our_vars['CRAYON_SF_BASE'] = './'
-# our_vars['CRAYON_SF_HDRS'] = 'include/crayon_savefile'
-envs = bf.create_builders(ARGUMENTS, our_vars)
+# Want to do
+	# Make Help() without env?
+	# PLATFORMS shouldn't have a default, instead it should give an error
+	# PLATFORMS=pc,all throws an error, but it should just default to "all"
+	# Prevent "None" for platforms
+	# 10.2.6 contains some typos
+	# Note that you must delay the call of UnknownVariables until after you have applied the Variables object to a construction environment with the variables= keyword argument of an Environment call. 
+		# Why?
 
-SConscript('SConscript', exports = 'envs')
+# env = Environment(variables=vars, CPPDEFINES={'RELEASE_BUILD': '${RELEASE}'})
+e = Environment(variables = v)
+Help(v.GenerateHelpText(e))
+unknown_vars = v.UnknownVariables()
+if unknown_vars:
+	print("Invalid options detected: " + ', '.join(map(str, unknown_vars.keys())))
+	Exit(1)
+
+print(e['PLATFORMS'])
+
+# Help(v.GenerateHelpText())
+# Help(str(v))
+
+# # Create the environments
+# our_vars = dict()
+# our_vars['CRAYON_SF_BASE'] = './'
+# envs = bf.create_builders(ARGUMENTS, our_vars)
+
+# SConscript('SConscript', exports = 'envs')
