@@ -1,33 +1,38 @@
 # Import our helper functions
 import builder_functions as bf
 # ARGUMENTS = bf.input_handling(ARGUMENTS)
-v = bf.input_logic(ARGUMENTS)
+params = bf.input_logic(ARGUMENTS)
 
 # Want to do
 	# Make Help() without env?
+		# Pass in an empty dict...
 	# PLATFORMS shouldn't have a default, instead it should give an error
+
+	# PLATFORMS=pc,dreamcast. How do I extract the different options? Just split on ','?
 	# PLATFORMS=pc,all throws an error, but it should just default to "all"
 	# Prevent "None" for platforms
-	# 10.2.6 contains some typos
+		# No easy way to do it, I'll have to manually detect it
 	# Note that you must delay the call of UnknownVariables until after you have applied the Variables object to a construction environment with the variables= keyword argument of an Environment call. 
 		# Why?
 
-# env = Environment(variables=vars, CPPDEFINES={'RELEASE_BUILD': '${RELEASE}'})
-e = Environment(variables = v)
-Help(v.GenerateHelpText(e))
-unknown_vars = v.UnknownVariables()
-if unknown_vars:
-	print("Invalid options detected: " + ', '.join(map(str, unknown_vars.keys())))
+e = Environment(variables = params)
+unknown_params = params.UnknownVariables()	# Must be done after env creation
+if unknown_params:
+	print("Invalid options detected: " + ', '.join(map(str, unknown_params.keys())))
 	Exit(1)
 
 print(e['PLATFORMS'])
 
-# Help(v.GenerateHelpText())
-# Help(str(v))
+Help(params.GenerateHelpText({}))	# It doesn't actually properly look at the parameter...
+
+print(str(type(params)))
+print(params['PLATFORMS'])	# This won't print it out
+
+# KEEP THE BELOW STUFF
 
 # # Create the environments
 # our_vars = dict()
 # our_vars['CRAYON_SF_BASE'] = './'
-# envs = bf.create_builders(ARGUMENTS, our_vars)
+# envs = bf.create_builders(params, our_vars)
 
 # SConscript('SConscript', exports = 'envs')

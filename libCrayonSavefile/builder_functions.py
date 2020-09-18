@@ -1,31 +1,38 @@
 # Needed so we can use scons stuff like builders
 from SCons.Script import *
 
-def get_supported_platforms_old():
+def get_supported_platforms():
 	return ['dreamcast', 'pc', 'all']
 
-def get_supported_platforms():
+def get_supported_platforms_old():
 	return ['dreamcast', 'pc']
 
-# def valid_platform(key, val, env):
-#     if not val in get_supported_platforms():
-#         raise Exception("Invalid platform '%s'" % val)
+# This will prevent 'none' from working
+def valid_platform(key, val, env):
+	print(val)	# Split this info a list and loop over it
+	if not val in get_supported_platforms():
+		print("Please give a value for PLATFORMS. Type \"scons --help\" for more information")
+		Exit(1)
 
 #Might need a validator to set platform
 def input_logic(args):
-	# v = Variables('#/build_args.py', args)
-	v = Variables(None, args)
-	v.AddVariables(
-		ListVariable('PLATFORMS',
-					help = "The platforms we want to build",
-					default = 'all',
-					names = get_supported_platforms()),
+	# vars = Variables('#/build_args.py', args)
+	vars = Variables(None, args)
+	vars.AddVariables(
 		BoolVariable('DEBUG',
 					help = "Build in debug mode",
 					default = 0),
 	)
 
-	return v
+	(key, help, default, _, converter) = ListVariable('PLATFORMS',
+				help = "The platforms we want to build",
+				default = 'unspecified',
+				names = get_supported_platforms())
+		
+
+	vars.Add((key, help, default, valid_platform, converter))
+
+	return vars
 
 # Ch 10.2 has info on multiple values for one arg key value
 	# 10.2.2 details help on args
@@ -36,40 +43,49 @@ def input_logic(args):
 		# It does have a pre-build "all" keyword which does what my all does
 		# It also has a none, so make sure to detect that and disable it
 	# 10.2.6 is useful for unknown var prevention
-def input_handling(args):
-	platform = args.get('PLATFORM')
-	debug = str(args.get('DEBUG', '0')).lower()	# If var not present, default to False
-	if debug == 'true' or debug == '1':
-		args['DEBUG'] = True
-	if debug == 'false' or debug == '0':
-		args['DEBUG'] = False
+# def input_handling(args):
+# 	platform = args.get('PLATFORM')
+# 	debug = str(args.get('DEBUG', '0')).lower()	# If var not present, default to False
+# 	if debug == 'true' or debug == '1':
+# 		args['DEBUG'] = True
+# 	if debug == 'false' or debug == '0':
+# 		args['DEBUG'] = False
 
-	# Check if arguments are valid
-	supported_platforms = get_supported_platforms_old()
-	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True and args['DEBUG'] != False):
-		# Consider using Chapter 9.1, help
-		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
+# 	# Check if arguments are valid
+# 	supported_platforms = get_supported_platforms()
+# 	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True and args['DEBUG'] != False):
+# 		# Consider using Chapter 9.1, help
+# 		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
 
-		print("""
-		Please specify the target platform to compile this project for. You can also
-		optionally enable debug flags. By default debug is false.
+# 		print("""
+# 		Please specify the target platform to compile this project for. You can also
+# 		optionally enable debug flags. By default debug is false.
 
-		eg. `scons PLATFORM=dreamcast DEBUG=false`.
-		""")
-		print('\tSupported platforms are:')
-		for p in supported_platforms:
-			print('\t- ' + p)
+# 		eg. `scons PLATFORM=dreamcast DEBUG=false`.
+# 		""")
+# 		print('\tSupported platforms are:')
+# 		for p in supported_platforms:
+# 			print('\t- ' + p)
 
-		Exit(1)
+# 		Exit(1)
 
-	return args
+# 	return args
 
-# def create_builders(args, paths, program_name):
-def create_builders(args, our_vars):
+def create_builders(params, our_vars):
 	import os
 	env = list()
-	if args['PLATFORM'] == 'dreamcast' or args['PLATFORM'] == 'all':
-		env.append(Environment(ENV = os.environ, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
+
+	# How do I check the params since its not a list?
+	if params['PLATFORM'] == 'dreamcast' or params['PLATFORM'] == 'all':
+		env.append(
+			Environment(
+				variables = params,
+				ENV = os.environ,
+				CC = 'kos-cc',
+				CXX = 'kos-c++',
+				AR = 'kos-ar',
+			)
+		)
 
 		# Making sure we use the right prefix and suffix
 		env[-1]['LIBPREFIX'] = 'lib'
@@ -86,15 +102,21 @@ def create_builders(args, our_vars):
 			env[-1]['IP_BIN_DIR'] = our_vars['IP_BIN_DIR'] + 'IP.BIN'
 
 		# Add the platform
-		env[-1]['PLATFORM'] = 'dreamcast'
-		env[-1]['SPECIFIC_PLATFORM'] = env[-1]['PLATFORM']
+		env[-1]['GENERAL_PLATFORM'] = 'dreamcast'
+		env[-1]['SPECIFIC_PLATFORM'] = env[-1]['GENERAL_PLATFORM']
 
 	from sys import platform
-	if args['PLATFORM'] == 'pc' or args['PLATFORM'] == 'all':
-		env.append(Environment(ENV = os.environ))	#Apparently some ppl need that ENV for CCVERSION
+	if params['PLATFORM'] == 'pc' or params['PLATFORM'] == 'all':
+		# Apparently some ppl need os' ENV for CCVERSION
+		env.append(
+			Environment(
+				variables = params,
+				ENV = os.environ,
+			)
+		)
 
 		# Add the platform
-		env[-1]['PLATFORM'] = 'pc'
+		env[-1]['GENERAL_PLATFORM'] = 'pc'
 		if platform.startswith('linux') == True:
 			env[-1]['SPECIFIC_PLATFORM'] = 'linux'
 		elif platform == 'win32':
@@ -124,7 +146,7 @@ def create_builders(args, our_vars):
 			e['PROG_NAME'] = our_vars['PROG_NAME']
 
 		#Add in some cflags if in debug mode
-		if args['DEBUG'] == True:
+		if params['DEBUG'] == True:
 			# Wformat level 2 has extra checks over standard.
 			# no-common is where two files define the same global var when they should be seperate
 			# g3 is like g, but it includes macro information
@@ -134,7 +156,7 @@ def create_builders(args, our_vars):
 		# Major, Minor, Patch version numbers
 		# We need the CC and CXX checks for pc because this flag is only for GCC/G++
 		our_version = list(map(int, e['CCVERSION'].split('.')))
-		if all([a >= b for a, b in zip(our_version, colour_version)]) and (e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
+		if all([a >= b for a, b in zip(our_version, colour_version)]) and (e['GENERAL_PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
 			e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
 
 	return env

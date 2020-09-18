@@ -49,9 +49,9 @@ for e in envs:
 															# won't duplicate the src files
 
 	src_files = e.Glob('$BUILD_DIR/*.c') # We have to specify the build path instead of the real one
-	if e['PLATFORM'] == 'pc':
+	if e['GENERAL_PLATFORM'] == 'pc':
 		e.Program('$PROG_DIR/$PROG_NAME', src_files, LIBS = lib, LIBPATH = lib_path)
-	elif e['PLATFORM'] == 'dreamcast':
+	elif e['GENERAL_PLATFORM'] == 'dreamcast':
 		rom_img = e.Command('$BUILD_DIR/romdisk_boot.img', 'romdisk_boot/',
 			'$KOS_GENROMFS -f $TARGET -d $SOURCE')
 		src_files.append(e.Command('$BUILD_DIR/romdisk_boot.o', rom_img,
