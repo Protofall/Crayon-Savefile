@@ -17,8 +17,7 @@ def valid_platform(key, val, env):
 
 def input_logic(args):
 	# vars = Variables('#/scons_args.py', args)
-	# vars = Variables('scons_args.py', args)
-	vars = Variables(None, args)
+	vars = Variables('scons_args.py', args)
 	vars.AddVariables(
 		BoolVariable('DEBUG',
 					help = "Build in debug mode",
