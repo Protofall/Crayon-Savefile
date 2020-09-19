@@ -4,9 +4,6 @@ from SCons.Script import *
 def get_supported_platforms():
 	return ['dreamcast', 'pc', 'all']
 
-def get_supported_platforms_old():
-	return ['dreamcast', 'pc']
-
 # This will prevent 'none' from working
 def valid_platform(key, val, env):
 	# Split val so we can check all arguments
@@ -16,12 +13,11 @@ def valid_platform(key, val, env):
 			Exit(1)
 
 def input_logic(args):
-	# vars = Variables('#/scons_args.py', args)
 	vars = Variables('scons_args.py', args)
 	vars.AddVariables(
 		BoolVariable('DEBUG',
-					help = "Build in debug mode",
-					default = 0),
+			help = "Build in debug mode",
+			default = 0),
 	)
 
 	# This is the only way to set a validator for ListVariable. LHS is tuple
@@ -42,14 +38,6 @@ def input_logic(args):
 	Help(vars.GenerateHelpText({}))	# It doesn't actually properly look at the parameter...
 
 	return vars
-
-# Ch 10.2 has info on multiple values for one arg key value
-	# 10.2.2 details help on args
-	# Variables('custom.py', ARGUMENTS) means the stuff from ARGUMENTS will override custom.py
-
-# 		# Consider using Chapter 9.1, help
-# 		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
-
 
 def create_builders(params, our_vars):
 	# Split the PLATFORMS into a list
