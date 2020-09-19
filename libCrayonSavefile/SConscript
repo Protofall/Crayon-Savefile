@@ -3,11 +3,11 @@ Import('envs')
 # Create our library/s
 lib_dict = dict()
 for env in envs:
-	e = env
+	e = env.Clone()
 	e['CPPPATH'] = e['CRAYON_SF_BASE'] + 'include/crayon_savefile'
 
 	#Add in some cflags if in debug mode
-	if ARGUMENTS['DEBUG'] == True:
+	if e['DEBUG'] == True:
 		e.AppendUnique(CPPDEFINES = [{'CRAYON_DEBUG':1}])
 		# These can be helpful sometimes
 		# e.AppendUnique(CPPFLAGS = ['-Wconversion', '-Wno-unused-parameter'])

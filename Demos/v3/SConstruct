@@ -1,29 +1,30 @@
+# Create the our dict
+our_vars = dict()
 lib_folder = '../../libCrayonSavefile/'
 lib_folder_scons = '#/' + lib_folder
-
-our_vars = dict()
 our_vars['IP_BIN_DIR'] = './'
 our_vars['CRAYON_SF_BASE'] = lib_folder_scons
 import os
 our_vars['PROG_NAME'] = 'Crayon-Savefile-Demo-' + os.path.basename(os.getcwd()) #Name of host folder
-
-# Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
-# extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
-# args = extern_cmds.input_handling(ARGUMENTS)
 
 # Import our helper functions
 import sys
 sys.path.insert(1, lib_folder)	# This will put our path 2nd, right behind the local path
 import builder_functions as bf
 
-ARGUMENTS = bf.input_handling(ARGUMENTS)
+params = bf.input_logic(ARGUMENTS)
 
-# Create the environments
-envs = bf.create_builders(ARGUMENTS, our_vars)
+# Create our envs
+envs = bf.create_builders(params, our_vars)
 
 # Build the lib/nodes
 lib_dict = SConscript(lib_folder + 'SConscript', exports = 'envs')
 
+
+# ------------------------------------------------------------------------
+
+
+# The actual building
 import sys
 for e in envs:
 	try:
@@ -70,4 +71,14 @@ for e in envs:
 		cdi = e.Command('$PROG_DIR/${PROG_NAME}.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
 
+
+
+
+
+
+
 # env.Command(target,source,"./scripts/run_my_script $TARGET $SOURCE")
+
+# Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
+# extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
+# args = extern_cmds.input_handling(ARGUMENTS)

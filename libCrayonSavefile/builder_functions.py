@@ -9,14 +9,15 @@ def get_supported_platforms_old():
 
 # This will prevent 'none' from working
 def valid_platform(key, val, env):
-	print(val)	# Split this info a list and loop over it
-	if not val in get_supported_platforms():
-		print("Please give a value for PLATFORMS. Type \"scons --help\" for more information")
-		Exit(1)
+	# Split val so we can check all arguments
+	for v in val.split():
+		if not v in get_supported_platforms():
+			print("Please give a value for PLATFORMS. Type \"scons --help\" for more information")
+			Exit(1)
 
-#Might need a validator to set platform
 def input_logic(args):
-	# vars = Variables('#/build_args.py', args)
+	# vars = Variables('#/scons_args.py', args)
+	# vars = Variables('scons_args.py', args)
 	vars = Variables(None, args)
 	vars.AddVariables(
 		BoolVariable('DEBUG',
@@ -24,59 +25,47 @@ def input_logic(args):
 					default = 0),
 	)
 
+	# This is the only way to set a validator for ListVariable. LHS is tuple
 	(key, help, default, _, converter) = ListVariable('PLATFORMS',
-				help = "The platforms we want to build",
-				default = 'unspecified',
-				names = get_supported_platforms())
-		
-
+		help = "The platforms we want to build",
+		default = 'unspecified',
+		names = get_supported_platforms()
+	)	
 	vars.Add((key, help, default, valid_platform, converter))
+
+	# Create a processing env to handle unknown params
+	processing_env = Environment(tools = [], variables = vars)
+	unknown_params = vars.UnknownVariables()	# Must be done after env creation
+	if unknown_params:
+		print("Invalid options detected: " + ', '.join(map(str, unknown_params.keys())))
+		Exit(1)
+
+	Help(vars.GenerateHelpText({}))	# It doesn't actually properly look at the parameter...
 
 	return vars
 
 # Ch 10.2 has info on multiple values for one arg key value
 	# 10.2.2 details help on args
 	# Variables('custom.py', ARGUMENTS) means the stuff from ARGUMENTS will override custom.py
-	# 10.2.4.1 specifies a variable being boolean, good for debug
-	# 10.2.4.2 specifies enums, useful for platform since we only accept those in get_supported_platforms()
-	# 10.2.4.3 can be useful for specifying multiple platforms later on. Maybe?
-		# It does have a pre-build "all" keyword which does what my all does
-		# It also has a none, so make sure to detect that and disable it
-	# 10.2.6 is useful for unknown var prevention
-# def input_handling(args):
-# 	platform = args.get('PLATFORM')
-# 	debug = str(args.get('DEBUG', '0')).lower()	# If var not present, default to False
-# 	if debug == 'true' or debug == '1':
-# 		args['DEBUG'] = True
-# 	if debug == 'false' or debug == '0':
-# 		args['DEBUG'] = False
 
-# 	# Check if arguments are valid
-# 	supported_platforms = get_supported_platforms()
-# 	if platform == None or platform not in supported_platforms or (args['DEBUG'] != True and args['DEBUG'] != False):
 # 		# Consider using Chapter 9.1, help
 # 		# https://scons.org/doc/production/HTML/scons-user.html#idp140430729969496
 
-# 		print("""
-# 		Please specify the target platform to compile this project for. You can also
-# 		optionally enable debug flags. By default debug is false.
-
-# 		eg. `scons PLATFORM=dreamcast DEBUG=false`.
-# 		""")
-# 		print('\tSupported platforms are:')
-# 		for p in supported_platforms:
-# 			print('\t- ' + p)
-
-# 		Exit(1)
-
-# 	return args
 
 def create_builders(params, our_vars):
+	# Split the PLATFORMS into a list
+	params_env = Environment(tools = [], variables = params)
+	target_platforms = str(params_env['PLATFORMS']).split(',')
+
+	# If all was present, just set it to all platforms
+	if 'all' in target_platforms:
+		target_platforms = get_supported_platforms()
+
 	import os
 	env = list()
 
 	# How do I check the params since its not a list?
-	if params['PLATFORM'] == 'dreamcast' or params['PLATFORM'] == 'all':
+	if 'dreamcast' in target_platforms:
 		env.append(
 			Environment(
 				variables = params,
@@ -106,7 +95,7 @@ def create_builders(params, our_vars):
 		env[-1]['SPECIFIC_PLATFORM'] = env[-1]['GENERAL_PLATFORM']
 
 	from sys import platform
-	if params['PLATFORM'] == 'pc' or params['PLATFORM'] == 'all':
+	if 'pc' in target_platforms:
 		# Apparently some ppl need os' ENV for CCVERSION
 		env.append(
 			Environment(
@@ -146,7 +135,7 @@ def create_builders(params, our_vars):
 			e['PROG_NAME'] = our_vars['PROG_NAME']
 
 		#Add in some cflags if in debug mode
-		if params['DEBUG'] == True:
+		if e['DEBUG'] == True:
 			# Wformat level 2 has extra checks over standard.
 			# no-common is where two files define the same global var when they should be seperate
 			# g3 is like g, but it includes macro information
