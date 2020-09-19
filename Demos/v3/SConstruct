@@ -1,115 +1,36 @@
-program_name = 'Crayon-Savefile-Demo-v3'
-ip_bin_path = ''
-
-# The #/ means relative to the calling script, so even in
-# SConscript it works from this file rather than relative
-lib_folder = '#/../../libCrayonSavefile/'
-include_path = lib_folder + 'include/'
-
-# ------------- FUNCTION 1 BEGIN ------------- #
-
-# Get arguments in the format we want
-PLATFORM = ARGUMENTS.get('PLATFORM')
-DEBUG = ARGUMENTS.get('DEBUG', '0').lower()	# If var not present, default to False
-if DEBUG == 'true' or DEBUG == '1':
-	DEBUG = True
-if DEBUG == 'false' or DEBUG == '0':
-	DEBUG = False
-
-# Check if arguments are valid
-supported_platforms = ['dreamcast', 'pc', 'all']
-if PLATFORM == None or PLATFORM not in supported_platforms or (DEBUG != False and DEBUG != True):
-	print("""
-	Please specify the target platform to compile this project for. You can also
-	optionally enable debug flags. By default debug is false.
-
-	eg. `scons PLATFORM=dreamcast DEBUG=false`.
-	""")
-	print('\tSupported platforms are:')
-	for p in supported_platforms:
-		print('\t- ' + p)
-
-	exit(1)
-
-# Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
-# extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
-# args = extern_cmds.input_handling(ARGUMENTS)
-
-# ------------- FUNCTION 1 END ------------- #
-
-# ------------- FUNCTION 2 BEGIN ------------- #
-
-# Create the environments
+# Create the our dict
+our_vars = dict()
+lib_folder = '../../libCrayonSavefile/'
+lib_folder_scons = '#/' + lib_folder
+our_vars['IP_BIN_DIR'] = './'
+our_vars['CRAYON_SF_BASE'] = lib_folder_scons
 import os
-env = list()
-if PLATFORM == 'dreamcast' or PLATFORM == 'all':
-	env.append(Environment(ENV = os.environ, CPPPATH = include_path, CC = 'kos-cc', CXX = 'kos-c++', AR = 'kos-ar'))
+our_vars['PROG_NAME'] = 'Crayon-Savefile-Demo-' + os.path.basename(os.getcwd()) #Name of host folder
 
-	# Making sure we use the right prefix and suffix
-	env[-1]['LIBPREFIX'] = 'lib'
-	env[-1]['LIBSUFFIX'] = '.a'
-	env[-1]['OBJSUFFIX'] = '.o'	# Windows has .obj
-	env[-1]['PROGSUFFIX'] = '.elf'
-
-	# Fix this later, here's a hack for now
-	env[-1]['KOS_BASE'] = env[-1]['ENV']['KOS_BASE']
-	env[-1]['KOS_GENROMFS'] = env[-1]['ENV']['KOS_GENROMFS']
-
-	# Location of IP.BIN
-	env[-1]['IP_DIR'] = ip_bin_path + 'IP.BIN'
-
-	# Add the platform
-	env[-1]['PLATFORM'] = 'dreamcast'
-	env[-1]['SPECIFIC_PLATFORM'] = env[-1]['PLATFORM']
-
-from sys import platform
-if PLATFORM == 'pc' or PLATFORM == 'all':
-	env.append(Environment(ENV = os.environ, CPPPATH = include_path))	#Apparently some ppl need that ENV for CCVERSION
-
-	# Add the platform
-	env[-1]['PLATFORM'] = 'pc'
-	if platform.startswith('linux') == True:
-		env[-1]['SPECIFIC_PLATFORM'] = 'linux'
-	elif platform == 'win32':
-		env[-1]['SPECIFIC_PLATFORM'] = 'windows'
-	elif platform == 'darwin':
-		env[-1]['SPECIFIC_PLATFORM'] = 'mac'
-	else:
-		print('Platform "' + platform + '" is not supported')
-		exit(1)
-
-colour_version = [4, 9, 0]
-
-# Set some env vars for all envs
-for e in env:
-	e['CODE_DIR'] = 'code'
-	e['CDFS_DIR'] = 'cdfs'
-	e['PROG_NAME'] = program_name
-
-	#Add in some cflags if in debug mode
-	if DEBUG == True:
-		e.AppendUnique(CPPFLAGS = ['-g3', '-Wall', '-Wformat=2', '-fno-common'])
-
-	# Enables GCC colour (Since it normally only does colour for terminals and scons is just an "output")
-	# Major, Minor, Patch version numbers
-	# We need the CC and CXX checks for pc because this flag is only for GCC/G++
-	our_version = list(map(int, e['CCVERSION'].split('.')))
-	if all([a >= b for a, b in zip(our_version, colour_version)]) and
-		(e['PLATFORM'] != 'pc' or (e['CC'] == 'gcc' or e['CXX'] == 'g++')):
-		e.AppendUnique(CCFLAGS = ['-fdiagnostics-color=always'])
-
-# env = extern_cmds.create_builders(args,)
-
-# ------------- FUNCTION 2 END ------------- #
-
-lib_dict = SConscript(lib_folder + 'SConstruct')
-
+# Import our helper functions
 import sys
-for e in env:
+sys.path.insert(1, lib_folder)	# This will put our path 2nd, right behind the local path
+import builder_functions as bf
+
+params = bf.input_logic(ARGUMENTS)
+
+# Create our envs
+envs = bf.create_builders(params, our_vars)
+
+# Build the lib/nodes
+lib_dict = SConscript(lib_folder + 'SConscript', exports = 'envs')
+
+
+# ------------------------------------------------------------------------
+
+
+# The actual building
+import sys
+for e in envs:
 	try:
 		lib = lib_dict[e['SPECIFIC_PLATFORM']]
 	except KeyError:
-		print('Somehow lib file for "' + specific_platform +'" cannot be found', file = sys.stderr)
+		print('Somehow lib file for "' + e['SPECIFIC_PLATFORM'] +'" cannot be found', file = sys.stderr)
 		exit(1)
 
 	lib_path = lib_folder + 'lib/' + e['SPECIFIC_PLATFORM'] +'/'
@@ -129,9 +50,9 @@ for e in env:
 															# won't duplicate the src files
 
 	src_files = e.Glob('$BUILD_DIR/*.c') # We have to specify the build path instead of the real one
-	if e['PLATFORM'] == 'pc':
+	if e['GENERAL_PLATFORM'] == 'pc':
 		e.Program('$PROG_DIR/$PROG_NAME', src_files, LIBS = lib, LIBPATH = lib_path)
-	elif e['PLATFORM'] == 'dreamcast':
+	elif e['GENERAL_PLATFORM'] == 'dreamcast':
 		rom_img = e.Command('$BUILD_DIR/romdisk_boot.img', 'romdisk_boot/',
 			'$KOS_GENROMFS -f $TARGET -d $SOURCE')
 		src_files.append(e.Command('$BUILD_DIR/romdisk_boot.o', rom_img,
@@ -146,8 +67,18 @@ for e in env:
 			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
 		# Iso depends on cdfs_scrambled, but we pass in "cdfs/"" instead of the source/s
 		iso = e.Command('$BUILD_DIR/${PROG_NAME}.iso', scrambled,
-			'genisoimage -G $IP_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
+			'genisoimage -G $IP_BIN_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
 		cdi = e.Command('$PROG_DIR/${PROG_NAME}.cdi', iso,
 			'cdi4dc $SOURCE $TARGET')
 
+
+
+
+
+
+
 # env.Command(target,source,"./scripts/run_my_script $TARGET $SOURCE")
+
+# Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
+# extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
+# args = extern_cmds.input_handling(ARGUMENTS)

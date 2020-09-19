@@ -1,6 +1,9 @@
 #include "graphics.h"
 
-#ifdef _arch_dreamcast
+#if defined(_arch_dreamcast)
+
+pvr_ptr_t font_tex;
+
 void font_init(){
 	int i, x, y, c;
 	unsigned short * temp_tex;
