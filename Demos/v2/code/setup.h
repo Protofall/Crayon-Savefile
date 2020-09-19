@@ -1,7 +1,7 @@
-#ifndef MS_SETUP_H
-#define MS_SETUP_H
+#ifndef MY_SETUP_H
+#define MY_SETUP_H
 
-#include "extra_structs.h"
+#include "my_sf_vars.h"
 
 #include <crayon_savefile/savefile.h>
 #include <crayon_savefile/crayon.h>

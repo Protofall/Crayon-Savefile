@@ -221,7 +221,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
 int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details, int8_t save_device_id);
 
 // Calling this will also free any icon/eyecatcher
-void crayon_savefile_free(crayon_savefile_details_t *details);
+void crayon_savefile_free_details(crayon_savefile_details_t *details);
 
 void crayon_savefile_free_base_path();
 
@@ -255,23 +255,23 @@ uint8_t crayon_savefile_get_device_bit(uint8_t device_bitmap, uint8_t save_devic
 void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_id);
 
 // Takes a byte count and returns number of blocks needed to save it (Dreamcast)
-uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes);
+uint16_t crayon_savefile_convert_bytes_to_blocks(uint32_t bytes);
 
 // Returns the number of bytes your save file will need
 uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details);
 
 // Gets the length of one of the user provided strings
-uint16_t crayon_savefile_user_string_length(uint8_t string_id);
+uint16_t crayon_savefile_get_user_string_length(uint8_t string_id);
 
-void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer);
-int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
+void crayon_savefile_serialise_savedata(crayon_savefile_details_t *details, uint8_t *buffer);
+int8_t crayon_savefile_deserialise_savedata(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length);
 
 // Returns the amount of free space on the device (In Bytes)
 uint32_t crayon_savefile_devices_free_space(int8_t device_id);
 
 // Returns a pointer to a dynamically allocated path on success
 // Returns NULL if either the the save_device_id is invalid or failed malloc
-char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t save_device_id);
+char *crayon_savefile_get_device_path(crayon_savefile_details_t *details, int8_t save_device_id);
 
 // Only really meant for debugging. It just prints all the values in the savedata struct
 void __crayon_savefile_print_savedata(crayon_savefile_data_t *savedata);

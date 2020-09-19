@@ -19,18 +19,13 @@ KOS_INIT_ROMDISK(romdisk_boot);
 #endif
 
 int main(){
+	char buffer[400];	//Currently around 254 chars are used
+	int dev_id = 0;
 
 	#if defined(_arch_dreamcast)
 	
 	pvr_init_defaults();	//Init kos
 	font_init();
-	
-	#endif
-
-	char buffer[400];	//Currently around 254 chars are used
-	int dev_id = 0;
-
-	#if defined(_arch_dreamcast)
 	
 	uint32_t previous[4] = {0};
 	uint8_t end = 0;
@@ -77,7 +72,6 @@ int main(){
 
 	#endif
 
-
 	crayon_savefile_details_t savefile_details;
 
 	uint8_t setup_res = setup_savefile(&savefile_details);
@@ -95,7 +89,7 @@ int main(){
 	if(!setup_res){
 		#if defined(_arch_dreamcast)
 
-		sprintf(buffer, "Save initialised. %d blocks\n", crayon_savefile_bytes_to_blocks(bytes));
+		sprintf(buffer, "Save initialised. %d blocks\n", crayon_savefile_convert_bytes_to_blocks(bytes));
 
 		#else
 
@@ -158,7 +152,7 @@ int main(){
 
 	#endif
 
-	crayon_savefile_free(&savefile_details);
+	crayon_savefile_free_details(&savefile_details);
 	crayon_savefile_free_base_path();
 	#ifdef _arch_dreamcast
 	pvr_mem_free(font_tex);

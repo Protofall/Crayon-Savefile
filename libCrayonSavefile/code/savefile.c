@@ -94,7 +94,7 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 	uint16_t str_lengths[CRAYON_SF_NUM_DETAIL_STRINGS];
 	for(i = 0; i < CRAYON_SF_NUM_DETAIL_STRINGS; i++){
 		details->strings[i] = NULL;
-		str_lengths[i] = crayon_savefile_user_string_length(i);
+		str_lengths[i] = crayon_savefile_get_user_string_length(i);
 		details->strings[i] = malloc(sizeof(char) * str_lengths[i]);
 	}
 
@@ -125,7 +125,7 @@ int8_t crayon_savefile_init_savefile_details(crayon_savefile_details_t *details,
 }
 
 int8_t crayon_savefile_set_hdr_string(crayon_savefile_details_t *details, const char *string, uint8_t string_id){
-	uint16_t max_length = crayon_savefile_user_string_length(string_id);
+	uint16_t max_length = crayon_savefile_get_user_string_length(string_id);
 	uint16_t string_length = strlen(string);
 	if(max_length == 0 || string_length >= max_length){return -1;}
 
@@ -442,7 +442,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 		return -1;
 	}
 
-	char *savename = crayon_savefile_get_full_path(details, details->save_device_id);
+	char *savename = crayon_savefile_get_device_path(details, details->save_device_id);
 	if(!savename){
 		return -1;
 	}
@@ -479,7 +479,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 	;
 
 	// Read the pkg data into my struct
-	uint8_t deserialise_result = crayon_savefile_deserialise(details, (uint8_t *)pkg.data, (uint32_t)pkg.data_len);
+	uint8_t deserialise_result = crayon_savefile_deserialise_savedata(details, (uint8_t *)pkg.data, (uint32_t)pkg.data_len);
 
 	#elif defined(_arch_pc)
 
@@ -501,7 +501,7 @@ int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details){
 
 	// Read the pkg data into my struct
 	// We use CRAYON_SF_HDR_SIZE to skip the header
-	uint8_t deserialise_result = crayon_savefile_deserialise(details, data + CRAYON_SF_HDR_SIZE,
+	uint8_t deserialise_result = crayon_savefile_deserialise_savedata(details, data + CRAYON_SF_HDR_SIZE,
 		pkg_size - CRAYON_SF_HDR_SIZE);
 
 	#else
@@ -524,7 +524,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 		return -1;
 	}
 
-	char *savename = crayon_savefile_get_full_path(details, details->save_device_id);
+	char *savename = crayon_savefile_get_device_path(details, details->save_device_id);
 	if(!savename){
 		return -1;
 	}
@@ -539,7 +539,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 		return -1;
 	}
 
-	crayon_savefile_serialise(details, data);
+	crayon_savefile_serialise_savedata(details, data);
 
 	vmu_pkg_t pkg;
 	strncpy(pkg.desc_long, details->strings[CRAYON_SF_STRING_LONG_DESC], 32);
@@ -583,7 +583,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 		return -1;
 	}
 
-	crayon_savefile_serialise(details, data + CRAYON_SF_HDR_SIZE);
+	crayon_savefile_serialise_savedata(details, data + CRAYON_SF_HDR_SIZE);
 
 	strncpy((char*)data, "CRAYON SAVEFILE", sizeof(((crayon_savefile_hdr_t*) 0)->name));
 	uint16_t offset = sizeof(((crayon_savefile_hdr_t*) 0)->name);
@@ -591,7 +591,7 @@ int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details){
 	uint8_t i;
 	uint8_t str_length;
 	for(i = CRAYON_SF_STRING_APP_ID; i < CRAYON_SF_NUM_DETAIL_STRINGS; i++){
-		str_length = crayon_savefile_user_string_length(i);
+		str_length = crayon_savefile_get_user_string_length(i);
 		strncpy((char*)data + offset, details->strings[i], str_length);
 		offset += str_length;
 	}
@@ -650,7 +650,7 @@ int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details, int8_
 
 	#elif defined (_arch_pc)
 
-	char *savename = crayon_savefile_get_full_path(details, save_device_id);
+	char *savename = crayon_savefile_get_device_path(details, save_device_id);
 	if(!savename){
 		return -1;
 	}
@@ -670,7 +670,7 @@ int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details, int8_
 	return result;
 }
 
-void crayon_savefile_free(crayon_savefile_details_t *details){
+void crayon_savefile_free_details(crayon_savefile_details_t *details){
 	crayon_savefile_free_icon(details);
 	crayon_savefile_free_eyecatcher(details);
 
@@ -781,7 +781,7 @@ void crayon_savefile_set_device_bit(uint8_t *device_bitmap, uint8_t save_device_
 
 // Rounds the number down to nearest multiple of 512, then adds 1 if there's a remainder
 // (Function is only useful for Dreamcast)
-uint16_t crayon_savefile_bytes_to_blocks(uint32_t bytes){
+uint16_t crayon_savefile_convert_bytes_to_blocks(uint32_t bytes){
 	return (bytes >> 9) + !!(bytes & ((1 << 9) - 1));
 }
 
@@ -827,7 +827,7 @@ uint32_t crayon_savefile_get_savefile_size(crayon_savefile_details_t *details){
 	#endif
 }
 
-uint16_t crayon_savefile_user_string_length(uint8_t string_id){
+uint16_t crayon_savefile_get_user_string_length(uint8_t string_id){
 	switch(string_id){
 		case CRAYON_SF_STRING_FILENAME:
 			#if defined(_arch_pc)
@@ -860,7 +860,7 @@ uint16_t crayon_savefile_user_string_length(uint8_t string_id){
 	}
 }
 
-void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buffer){
+void crayon_savefile_serialise_savedata(crayon_savefile_details_t *details, uint8_t *buffer){
 	crayon_savefile_data_t data = details->savedata;
 
 	// Encode the version number
@@ -901,7 +901,7 @@ void crayon_savefile_serialise(crayon_savefile_details_t *details, uint8_t *buff
 }
 
 // Assume the buffer has the correct endian-ness going into this
-int8_t crayon_savefile_deserialise(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length){
+int8_t crayon_savefile_deserialise_savedata(crayon_savefile_details_t *details, uint8_t *data, uint32_t data_length){
 	// Same as serialiser, but instead we extract the variables and version from the buffer
 	crayon_savefile_data_t *new_savedata = &details->savedata;
 
@@ -1152,7 +1152,7 @@ uint32_t crayon_savefile_devices_free_space(int8_t device_id){
 }
 
 // It will construct the full string for you
-char *crayon_savefile_get_full_path(crayon_savefile_details_t *details, int8_t save_device_id){
+char *crayon_savefile_get_device_path(crayon_savefile_details_t *details, int8_t save_device_id){
 	if(save_device_id < 0 || save_device_id >= CRAYON_SF_NUM_SAVE_DEVICES){
 		return NULL;
 	}
@@ -1310,7 +1310,7 @@ int8_t crayon_savefile_check_savedata(crayon_savefile_details_t *details, int8_t
 	// 0 for invalid savefile just incase we get an error
 	details->savefile_versions[save_device_id] = 0;
 
-	char *savename = crayon_savefile_get_full_path(details, save_device_id);
+	char *savename = crayon_savefile_get_device_path(details, save_device_id);
 	if(!savename){
 		return -1;
 	}
@@ -1424,7 +1424,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 	// Or there was some issue with the savefile (Failed CRC or wrong APP_ID)
 	// So if the savefile does exist, then we say the device isn't present, else we check for space and see
 	if(crayon_savefile_check_savedata(details, save_device_id)){
-		char *savename = crayon_savefile_get_full_path(details, save_device_id);
+		char *savename = crayon_savefile_get_device_path(details, save_device_id);
 		if(!savename){
 			return -1;
 		}
@@ -1459,7 +1459,7 @@ int8_t crayon_savefile_update_device_info(crayon_savefile_details_t *details, in
 		}
 		else if(details->savefile_versions[save_device_id] != 0 &&
 			details->savefile_versions[save_device_id] < details->latest_version){
-			char *savename = crayon_savefile_get_full_path(details, save_device_id);
+			char *savename = crayon_savefile_get_device_path(details, save_device_id);
 			if(!savename){
 				return -1;
 			}

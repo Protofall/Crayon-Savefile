@@ -1,3 +1,4 @@
+*.img
 *.o
 *.elf
 *.bin
@@ -5,5 +6,5 @@
 *.7z
 *.iso
 cdfs/*
-Crayon-Savefile-Demo-v3
+Crayon-Savefile-Demo-*
 .sconsign.dblite

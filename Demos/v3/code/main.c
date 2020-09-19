@@ -89,7 +89,7 @@ int main(){
 	if(!setup_res){
 		#if defined(_arch_dreamcast)
 
-		sprintf(buffer, "Save initialised. %d blocks\n", crayon_savefile_bytes_to_blocks(bytes));
+		sprintf(buffer, "Save initialised. %d blocks\n", crayon_savefile_convert_bytes_to_blocks(bytes));
 
 		#else
 
@@ -152,7 +152,7 @@ int main(){
 
 	#endif
 
-	crayon_savefile_free(&savefile_details);
+	crayon_savefile_free_details(&savefile_details);
 	crayon_savefile_free_base_path();
 	#ifdef _arch_dreamcast
 	pvr_mem_free(font_tex);
