@@ -39,7 +39,7 @@ In order to build the library and the Demos, you need to use the SConstruct file
 
 `sudo apt-get install python3 python3-pip && pip3 install scons`
 
-To build the library file go to "libCrayonSavefile" and type `scons PLATFORM=all DEBUG=0` to build both Dreamcast and one of the PC builds (Depending on your compiler it will build either the Windows, Mac or Linux files). If you only want to build for one of the platforms, you can instead choose `PLATFORM=dreamcast` or `PLATFORM=pc`. The SConstruct file in the demos are called the same way too.
+To build the library file go to "libCrayonSavefile" and type `scons PLATFORMS=all DEBUG=0` to build both Dreamcast and one of the PC builds (Depending on your compiler it will build either the Windows, Mac or Linux files). You can also provide a list of platforms to build with `scons PLATFORMS=pc,dreamcast DEBUG=0`. The SConstruct file in the demos are called the same way too.
 
 ### Related Software
 

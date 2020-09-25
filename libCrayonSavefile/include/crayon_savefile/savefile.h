@@ -217,7 +217,7 @@ int8_t crayon_savefile_solidify(crayon_savefile_details_t *details);
 int8_t crayon_savefile_load_savedata(crayon_savefile_details_t *details);
 int8_t crayon_savefile_save_savedata(crayon_savefile_details_t *details);
 
-// This will delete the saved savefile. UNTESTED
+// This will delete the saved savefile.
 int8_t crayon_savefile_delete_savedata(crayon_savefile_details_t *details, int8_t save_device_id);
 
 // Calling this will also free any icon/eyecatcher
