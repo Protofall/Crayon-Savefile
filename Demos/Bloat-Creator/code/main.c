@@ -109,7 +109,7 @@ int main(){
 
 		#if defined(_arch_dreamcast)
 
-		uint32_t true_size = crayon_savefile_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details));
+		uint32_t true_size = crayon_savefile_convert_bytes_to_blocks(crayon_savefile_get_savefile_size(&savefile_details));
 
 		#else
 
@@ -148,7 +148,7 @@ int main(){
 
 	#endif
 
-	crayon_savefile_free(&savefile_details);
+	crayon_savefile_free_details(&savefile_details);
 	crayon_savefile_free_base_path();
 	#ifdef _arch_dreamcast
 	pvr_mem_free(font_tex);

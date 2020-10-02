@@ -4,7 +4,8 @@
 #include "my_sf_vars.h"
 
 #include <crayon_savefile/savefile.h>
-#include <crayon_savefile/crayon.h>
+#include <crayon_savefile/misc.h>
+#include <crayon_savefile/peripheral.h>
 
 #include <stdlib.h>
 #include <string.h>

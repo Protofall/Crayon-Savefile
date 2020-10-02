@@ -1,39 +1,88 @@
-#Trying to get the program to "just compile" on PC right now
-
-#Create an environment with Crayon Savefile's include folder
+# Create the our dict
+our_vars = dict()
 lib_folder = '../../libCrayonSavefile/'
-include_path = lib_folder + 'include/'
+lib_folder_scons = '#/' + lib_folder
+our_vars['IP_BIN_DIR'] = './'
+our_vars['CRAYON_SF_BASE'] = lib_folder_scons
+import os
+our_vars['PROG_NAME'] = 'Bloat-Creator'
 
-#Get the specific platform name (For PC)
-from sys import platform
-if platform == "linux" or platform == "linux2":
-	specific_platform = 'linux'
-elif platform == "win32":
-	specific_platform = 'windows'
-elif platform == "darwin":
-	specific_platform = 'mac'
-else:
-	print "Platform \"" + platform + "\" isn't supported."
-	exit(1)
+# Import our helper functions
+import sys
+sys.path.insert(1, lib_folder)	# This will put our path 2nd, right behind the local path
+import builder_functions as bf
 
-#The path to the actual lib
-lib_path = lib_folder + 'lib/' + specific_platform +'/'
+params = bf.input_logic(ARGUMENTS)
 
-#Create our environments are tell it where all the lib's .h files are
-env = Environment(CPPPATH = [include_path], BUILD_DIR = 'build/' + specific_platform + '/')
+# Create our envs
+envs = bf.create_builders(params, our_vars)
 
-target_prog = '#/program/' + specific_platform + '/Bloat-Creator'
-env.Depends(target_prog, lib_path + env['LIBPREFIX'] + 'CrayonSavefile' + env['LIBSUFFIX'])
+# Build the lib/nodes
+lib_dict = SConscript(lib_folder + 'SConscript', exports = 'envs')
 
-# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good example",
-#this part right here is NOT the best practice. What you should actually do is have an SConscript file in #/code/
-#and call it with variant_dir parameter set to $BUILD_DIR. Then that script contains the code below this VariantDir
-#call. The way its currently setup can be confusing and error-prone. The reasons I'm not doing that here is because
-#I want everything in one file and people might be confused why an SConscript file is in their code folder, so this
-#way people can just see this SConstruct file and know "That's the build file"
-env.VariantDir('$BUILD_DIR', '#/code/', duplicate = 0)
 
-#Create the objects and program, then copy the program to the program folder
-src_files = env.Glob('$BUILD_DIR/*.c')
-program_dir = 'program/' + specific_platform + '/'
-program_file = env.Program(target = target_prog, source = src_files, LIBS = ['CrayonSavefile'], LIBPATH = lib_path)
+# ------------------------------------------------------------------------
+
+
+# The actual building
+import sys
+for e in envs:
+	try:
+		lib = lib_dict[e['SPECIFIC_PLATFORM']]
+	except KeyError:
+		print('Somehow lib file for "' + e['SPECIFIC_PLATFORM'] +'" cannot be found', file = sys.stderr)
+		exit(1)
+
+	lib_path = lib_folder + 'lib/' + e['SPECIFIC_PLATFORM'] +'/'
+
+	e['BUILD_DIR'] = 'build/' + e['SPECIFIC_PLATFORM']
+	e['PROG_DIR'] = 'program/' + e['SPECIFIC_PLATFORM']
+
+	# Add our libs
+	e.AppendUnique(LIBS = ['-lm', lib])
+	e.AppendUnique(LIBPATH = [lib_path])
+
+	# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
+	# example", this part right here is NOT the best practice. What you should actually do is have an
+	# SConscript file in code/ and call it with variant_dir parameter set to $BUILD_DIR. Then that
+	# script contains the code below this VariantDir call. The way its currently setup can be confusing
+	# and error-prone. The reasons I'm not doing that here is because I want everything in one file and
+	# people might be confused why an SConscript file is in their code folder, so this way people can
+	# just see this SConstruct file and know "That's the build file".
+	e.VariantDir('$BUILD_DIR', '$CODE_DIR', duplicate=0)	# Kind of moves over the processing for the code
+															# directory to our build dir duplicate=0 means it
+															# won't duplicate the src files
+
+	src_files = e.Glob('$BUILD_DIR/*.c') # We have to specify the build path instead of the real one
+	if e['GENERAL_PLATFORM'] == 'pc':
+		e.Program('$PROG_DIR/$PROG_NAME', src_files)
+	elif e['GENERAL_PLATFORM'] == 'dreamcast':
+		rom_img = e.Command('$BUILD_DIR/romdisk_boot.img', 'romdisk_boot/',
+			'$KOS_GENROMFS -f $TARGET -d $SOURCE')
+		src_files.append(e.Command('$BUILD_DIR/romdisk_boot.o', rom_img,
+			'$KOS_BASE/utils/bin2o/bin2o $SOURCE romdisk_boot $TARGET'))
+
+		# The source files list can contain c files and objects
+		elf = e.Program('$BUILD_DIR/${PROG_NAME}', src_files)
+		# e.Install(prog_dir, elf)	#Some people want the elf instead
+		binary = e.Command('$BUILD_DIR/${PROG_NAME}.bin', elf,
+			'sh-elf-objcopy -R .stack -O binary $SOURCE $TARGET')
+		scrambled = e.Command('$CDFS_DIR/1ST_READ.BIN', binary,
+			'$KOS_BASE/utils/scramble/scramble $SOURCE $TARGET')
+		# Iso depends on cdfs_scrambled, but we pass in "cdfs/"" instead of the source/s
+		iso = e.Command('$BUILD_DIR/${PROG_NAME}.iso', scrambled,
+			'genisoimage -G $IP_BIN_DIR -C 0,11702 -J -l -r -o $TARGET $CDFS_DIR')
+		cdi = e.Command('$PROG_DIR/${PROG_NAME}.cdi', iso,
+			'cdi4dc $SOURCE $TARGET')
+
+
+
+
+
+
+
+# env.Command(target,source,"./scripts/run_my_script $TARGET $SOURCE")
+
+# Section 7.4.2 - https://scons.org/doc/production/HTML/scons-user.html#idp140430730011976
+# extern_cmds = Environment(tools = ['builder_functions'], toolpath = [lib_folder])
+# args = extern_cmds.input_handling(ARGUMENTS)

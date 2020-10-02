@@ -1,5 +1,5 @@
-#ifndef SAVEFILE_CRAYON_H
-#define SAVEFILE_CRAYON_H
+#ifndef CRAYON_SAVEFILE_H
+#define CRAYON_SAVEFILE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +15,8 @@
 
 #endif
 
-#include "crayon.h"
+#include "misc.h"
+#include "peripheral.h"
 
 // Var types the user passes into functions
 enum {

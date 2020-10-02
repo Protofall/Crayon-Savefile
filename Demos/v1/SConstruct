@@ -37,6 +37,10 @@ for e in envs:
 
 	e['BUILD_DIR'] = 'build/' + e['SPECIFIC_PLATFORM']
 	e['PROG_DIR'] = 'program/' + e['SPECIFIC_PLATFORM']
+
+	# Add our libs
+	e.AppendUnique(LIBS = [lib])
+	e.AppendUnique(LIBPATH = [lib_path])
 	
 	# !!! NOTE !!!: If you are looking at this SConstruct file to "learn how to use it" or "see a good
 	# example", this part right here is NOT the best practice. What you should actually do is have an
@@ -51,7 +55,7 @@ for e in envs:
 
 	src_files = e.Glob('$BUILD_DIR/*.c') # We have to specify the build path instead of the real one
 	if e['GENERAL_PLATFORM'] == 'pc':
-		e.Program('$PROG_DIR/$PROG_NAME', src_files, LIBS = lib, LIBPATH = lib_path)
+		e.Program('$PROG_DIR/$PROG_NAME', src_files)
 	elif e['GENERAL_PLATFORM'] == 'dreamcast':
 		rom_img = e.Command('$BUILD_DIR/romdisk_boot.img', 'romdisk_boot/',
 			'$KOS_GENROMFS -f $TARGET -d $SOURCE')
@@ -59,7 +63,7 @@ for e in envs:
 			'$KOS_BASE/utils/bin2o/bin2o $SOURCE romdisk_boot $TARGET'))
 
 		# The source files list can contain c files and objects
-		elf = e.Program('$BUILD_DIR/${PROG_NAME}', src_files, LIBS = lib, LIBPATH = lib_path)
+		elf = e.Program('$BUILD_DIR/${PROG_NAME}', src_files)
 		# e.Install(prog_dir, elf)	#Some people want the elf instead
 		binary = e.Command('$BUILD_DIR/${PROG_NAME}.bin', elf,
 			'sh-elf-objcopy -R .stack -O binary $SOURCE $TARGET')
