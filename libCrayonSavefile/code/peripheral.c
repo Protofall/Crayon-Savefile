@@ -47,7 +47,7 @@ void crayon_peripheral_vmu_display_icon(uint8_t vmu_bitmap, void *icon){
 		for(i = 1; i <= 2; i++){
 			// a1a2b1b2c1c2d1d2
 			if((vmu_bitmap >> ((2 * j) + (i - 1))) & 1){	// We want to display on this VMU
-				if(!(vmu = maple_enum_dev(i, j))){	// Device not present
+				if(!(vmu = maple_enum_dev(j, i))){	// Device not present
 					continue;
 				}
 				vmu_draw_lcd(vmu, icon);
