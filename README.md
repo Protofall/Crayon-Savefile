@@ -1,3 +1,11 @@
+# IMPORTANT
+
+This repo is no longer active, instead I have moved to gitlab. Therefore I will no longer be updating this repository.
+
+To get the latest changes, go to: https://gitlab.com/Protofall/Crayon-Savefile
+
+-----------------------------------------
+
 # Crayon-Savefile
 A savefile system designed to take up little space and support version control. Works on PC and Dreamcast
 
